@@ -33,7 +33,7 @@ func LoadConfig() *Config {
 			OSRMHost:   getEnv("OSRM_HOST", ""),
 			Port:       getEnv("PORT", ""),
 			DBHost:     getEnv("DB_HOST", ""),
-			DBUser:     getEnv("DB_USERNAME", ""),
+			DBUser:     getEnv("DB_USER", ""),
 			DBPassword: getEnv("DB_PASSWORD", ""),
 			DBName:     getEnv("DB_NAME", ""),
 			DBPort:     getEnv("DB_PORT", "5432"),

@@ -30,11 +30,6 @@ func Connect() *sqlx.DB {
 			return
 		}
 
-		log.Printf("DB_PORT: %d", dbPort)
-		log.Printf("DB_USER: %s", cfg.DBUser)
-		log.Printf("DB_PASSWORD: %s", cfg.DBPassword)
-		log.Printf("DB_NAME: %s", cfg.DBName)
-		log.Printf("DB_HOST: %s", cfg.DBHost)
 		dsn := fmt.Sprintf(
 			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			cfg.DBHost, dbPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
