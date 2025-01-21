@@ -13,7 +13,7 @@ cd wayPointPro-go
 
 go mod tidy
 
-cat <<EOF > /root/wayPointPro-go/.env
+cat <<EOF > .env
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=waypointpro_user
