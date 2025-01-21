@@ -16,7 +16,7 @@ go mod tidy
 cat <<EOF > /root/wayPointPro-go/.env
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=your-waypointpro_user
+DB_USER=waypointpro_user
 DB_PASSWORD=Dh3hMMjzhaLq5VL7RT
 DB_NAME=waypointpro_1
 OSRM_HOST=http://localhost:5000
