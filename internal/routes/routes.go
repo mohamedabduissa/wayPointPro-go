@@ -14,7 +14,7 @@ func InitRoutes() *gin.Engine {
 	// Apply global middleware
 	router.Use(middleware.ExecutionTimeMiddleware())
 	router.Use(middleware.APIKeyMiddleware())
-	router.Use(middleware.RateLimit())
+	//router.Use(middleware.RateLimit())
 
 	// Add route groups
 	registerAPIRoutes(router)
