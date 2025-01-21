@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL driver
 	"log"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -20,9 +21,18 @@ func Connect() *sqlx.DB {
 	once.Do(func() {
 		cfg := config.LoadConfig()
 		// Build the PostgreSQL connection string (DSN)
+		dbPortStr := cfg.DBPort
+
+		// Convert the string to an integer
+		dbPort, err := strconv.Atoi(dbPortStr)
+		if err != nil {
+			fmt.Printf("Error converting DB_PORT to int: %v\n", err)
+			return
+		}
+
 		dsn := fmt.Sprintf(
 			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-			cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
+			cfg.DBHost, dbPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
 		)
 
 		// Connect to the database
