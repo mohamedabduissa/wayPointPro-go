@@ -59,8 +59,8 @@ func Initialize() Config {
 	dbCfg := Config{
 		Host:     "localhost",
 		Port:     5432,
-		User:     "postgres",
-		Password: "123456",
+		User:     "waypointpro_user",
+		Password: "Dh3hMMjzhaLq5VL7RT",
 		DBName:   "waypointpro_1",
 	}
 	return dbCfg
