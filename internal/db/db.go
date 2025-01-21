@@ -1,6 +1,7 @@
 package db
 
 import (
+	"WayPointPro/internal/config"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL driver
@@ -14,23 +15,14 @@ var (
 	once     sync.Once
 )
 
-// Config holds the database configuration details.
-type Config struct {
-	Host     string // Database host
-	Port     int    // Database port
-	User     string // Database username
-	Password string // Database password
-	DBName   string // Database name
-}
-
 // GetDB returns the singleton database instance
 func Connect() *sqlx.DB {
 	once.Do(func() {
-		cfg := Initialize()
+		cfg := config.LoadConfig()
 		// Build the PostgreSQL connection string (DSN)
 		dsn := fmt.Sprintf(
 			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-			cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName,
+			cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
 		)
 
 		// Connect to the database
@@ -54,14 +46,4 @@ func CloseDB() {
 		instance.Close()
 		log.Println("Database connection closed")
 	}
-}
-func Initialize() Config {
-	dbCfg := Config{
-		Host:     "localhost",
-		Port:     5432,
-		User:     "waypointpro_user",
-		Password: "Dh3hMMjzhaLq5VL7RT",
-		DBName:   "waypointpro_1",
-	}
-	return dbCfg
 }

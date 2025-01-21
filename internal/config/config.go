@@ -30,12 +30,12 @@ func LoadConfig() *Config {
 		}
 
 		config := &Config{
-			OSRMHost:   getEnv("OSRM_HOST", "http://207.127.98.226:5000"),
-			Port:       getEnv("PORT", "8080"),
-			DBHost:     getEnv("DB_HOST", "localhost"),
-			DBUser:     getEnv("DB_USERNAME", "postgres"),
-			DBPassword: getEnv("DB_PASSWORD", "123456"),
-			DBName:     getEnv("DB_NAME", "waypointpro_1"),
+			OSRMHost:   getEnv("OSRM_HOST", ""),
+			Port:       getEnv("PORT", ""),
+			DBHost:     getEnv("DB_HOST", ""),
+			DBUser:     getEnv("DB_USERNAME", ""),
+			DBPassword: getEnv("DB_PASSWORD", ""),
+			DBName:     getEnv("DB_NAME", ""),
 			DBPort:     getEnv("DB_PORT", "5432"),
 		}
 		instance = config
