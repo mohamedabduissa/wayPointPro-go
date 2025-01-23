@@ -61,8 +61,8 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 					totalTime += adjustedTime
 					break // Process one relevant feature per segment
 				}
+				counter += 1
 			}
-			counter += 1
 		}
 		log.Printf("counter is %d", counter)
 		counter = 0
