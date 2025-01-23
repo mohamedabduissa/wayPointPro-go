@@ -18,12 +18,23 @@ func NewOptimizer() *Optimizer {
 	return &Optimizer{}
 }
 
+func divideTrafficData(trafficData []map[string]interface{}) ([]map[string]interface{}, []map[string]interface{}) {
+	// Get the midpoint to divide the slice
+	mid := len(trafficData) / 2
+
+	// Split the slice into two parts
+	firstPart := trafficData[:mid]
+	secondPart := trafficData[mid:]
+
+	return firstPart, secondPart
+}
+
 // AdjustRouteTime adjusts the route time based on traffic data
 func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]interface{}) osrm.Route {
 	// Step 1: Initialize total time with the original route duration
 	totalTime := route.Duration // Original travel time
 	geometry := route.Geometry.Coordinates
-
+	dividedPart1, _ := divideTrafficData(trafficData)
 	// Step 2: Simplify route geometry to reduce the number of segments
 	simplifiedGeometry := o.SimplifyRoute(geometry, 0.0000001) // Adjust tolerance as needed
 
@@ -36,7 +47,7 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 
 		// Check segment against pre-filtered traffic features
 		counter := 0
-		for _, trafficFeature := range trafficData {
+		for _, trafficFeature := range dividedPart1 {
 			properties := trafficFeature["properties"].(map[string]interface{})
 			congestionLevel := properties["congestion"].(string)
 
