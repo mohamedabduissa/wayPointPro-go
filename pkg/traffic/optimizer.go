@@ -34,7 +34,7 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 	// Step 1: Initialize total time with the original route duration
 	totalTime := route.Duration // Original travel time
 	geometry := route.Geometry.Coordinates
-	_, _ := divideTrafficData(trafficData)
+	//_, _ := divideTrafficData(trafficData)
 	// Step 2: Simplify route geometry to reduce the number of segments
 	simplifiedGeometry := o.SimplifyRoute(geometry, 0.0000001) // Adjust tolerance as needed
 
