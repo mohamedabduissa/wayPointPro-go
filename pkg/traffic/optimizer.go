@@ -12,17 +12,20 @@ import (
 // Optimizer handles route optimization and traffic adjustments
 type Optimizer struct{}
 
+const kmhToMs = 1000.0 / 3600.0
+
 func NewOptimizer() *Optimizer {
 	return &Optimizer{}
 }
 
 // AdjustRouteTime adjusts the route time based on traffic data
 func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]interface{}) osrm.Route {
+	// Step 1: Initialize total time with the original route duration
 	totalTime := route.Duration // Original travel time
 	geometry := route.Geometry.Coordinates
 
 	// Step 2: Simplify route geometry to reduce the number of segments
-	simplifiedGeometry := o.SimplifyRoute(geometry, 0.00000000000001) // Adjust tolerance as needed
+	simplifiedGeometry := o.SimplifyRoute(geometry, 0.0000001) // Adjust tolerance as needed
 
 	// Step 3: Pre-compute congestion weights to avoid redundant calculations
 	congestionWeights := o.PrecomputeCongestionWeights()
@@ -30,22 +33,80 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 	// Step 4: Process each segment
 	for i := 0; i < len(simplifiedGeometry)-1; i++ {
 		segment := [2][]float64{simplifiedGeometry[i], simplifiedGeometry[i+1]}
-		segmentTime := o.CalculateSegmentTime(segment)
-
+		counter := 0
 		for _, trafficFeature := range trafficData {
-			if o.IsSegmentInTraffic(segment, trafficFeature) {
-				congestionLevel := trafficFeature["properties"].(map[string]interface{})["congestion"].(string)
-				adjustedTime := congestionWeights[congestionLevel] * segmentTime
-				totalTime += adjustedTime
-				break
+			classType := trafficFeature["properties"].(map[string]interface{})["class"].(string)
+			congestionLevel := trafficFeature["properties"].(map[string]interface{})["congestion"].(string)
+			if congestionLevel == "severe" || congestionLevel == "heavy" || congestionLevel == "moderate" {
+				segmentTime := o.CalculateSegmentTime(segment, classType)
+				if o.IsSegmentInTraffic(segment, trafficFeature) {
+					congestionLevel := trafficFeature["properties"].(map[string]interface{})["congestion"].(string)
+					adjustedTime := congestionWeights[congestionLevel] * segmentTime
+					totalTime += adjustedTime
+					break
+				}
+				counter += 1
+			}
+		}
+		log.Printf("counter is %d", counter)
+	}
+
+	// Step 6: Add intersection delays
+	intersectionDelay := adjustLegDurationForIntersections(route.Legs[0])
+	totalTime += intersectionDelay
+
+	// Step 7: Add a constant buffer time
+	totalTime += 60 // Add buffer time for variability
+
+	// Step 8: Update and return the adjusted route
+	route.TrafficDuration = totalTime
+	return route
+}
+
+func adjustLegDurationForIntersections(leg osrm.Leg) float64 {
+	totalDelay := 0.0
+
+	steps := leg.Steps
+	for _, step := range steps {
+		intersections := step.Intersections
+
+		for _, intersection := range intersections {
+			totalDelay += calculateIntersectionDelay(intersection)
+		}
+	}
+
+	return totalDelay
+}
+
+func calculateIntersectionDelay(intersection osrm.Intersection) float64 {
+	var delay float64
+
+	// Default delays for turns
+	const (
+		straightDelay  = 5  // 5 seconds
+		rightTurnDelay = 10 // 10 seconds
+		leftTurnDelay  = 20 // 20 seconds
+	)
+
+	// Check if "in" and "out" are defined
+	if intersection.In != 0 && intersection.Out != 0 {
+		// Determine turn type based on bearing difference
+		if len(intersection.Bearings) > intersection.In && len(intersection.Bearings) > intersection.Out {
+			bearingIn := intersection.Bearings[intersection.In]
+			bearingOut := intersection.Bearings[intersection.Out]
+
+			turnAngle := math.Abs(float64(bearingOut - bearingIn))
+			if turnAngle < 45 || turnAngle > 315 {
+				delay = straightDelay // Minimal delay for going straight
+			} else if turnAngle > 135 && turnAngle < 225 {
+				delay = leftTurnDelay // Longer delay for left turns
+			} else {
+				delay = rightTurnDelay // Moderate delay for right turns
 			}
 		}
 	}
 
-	// Step 5: Add constant buffer time and return adjusted route
-	totalTime += 60 // Add buffer time
-	route.TrafficDuration = totalTime
-	return route
+	return delay
 }
 
 // PrecomputeCongestionWeights generates weights for congestion levels
@@ -54,11 +115,41 @@ func (o *Optimizer) PrecomputeCongestionWeights() map[string]float64 {
 	weights := map[string]float64{
 		"unknown":  1.0,
 		"low":      1.0,
-		"moderate": 1.1,
-		"heavy":    1.3,
-		"severe":   1.5,
+		"moderate": 1.4,
+		"heavy":    1.75,
+		"severe":   3,
 	}
 	return weights
+}
+
+// PrecomputeCongestionWeights generates weights for congestion levels
+func (o *Optimizer) SpeedProfiles() map[string]float64 {
+	// Speed profiles for different road classes (in km/h)
+	var speedProfiles = map[string]float64{
+		"motorway":       100.0,
+		"trunk":          80.0,
+		"primary":        70.0,
+		"secondary":      60.0,
+		"tertiary":       50.0,
+		"residential":    30.0,
+		"service":        20.0,
+		"unclassified":   25.0,
+		"pedestrian":     5.0,
+		"motorway_link":  60.0,
+		"trunk_link":     50.0,
+		"primary_link":   40.0,
+		"secondary_link": 35.0,
+	}
+	return speedProfiles
+}
+
+// GetSpeedForClass retrieves the speed for a given road class
+func (o *Optimizer) GetSpeedForClass(class string) float64 {
+	// Retrieve speed from the profile, default to 25 km/h if class is unknown
+	if speed, exists := o.SpeedProfiles()[class]; exists {
+		return speed
+	}
+	return 25.0 // Default speed in km/h
 }
 
 // SimplifyRoute simplifies a route geometry using Douglas-Peucker algorithm
@@ -132,10 +223,11 @@ func (o *Optimizer) PreSimplify(geometry [][]float64, gridSize float64) [][]floa
 }
 
 // CalculateSegmentTime estimates the time for a route segment
-func (o *Optimizer) CalculateSegmentTime(segment [2][]float64) float64 {
+func (o *Optimizer) CalculateSegmentTime(segment [2][]float64, class string) float64 {
 	distance := o.CalculateDistance(segment[0], segment[1])
-	averageSpeed := 50.0 * 1000.0 / 3600.0 // 50 km/h in m/s
-	return distance / averageSpeed
+	speedMs := o.GetSpeedForClass(class) * kmhToMs
+
+	return distance / speedMs
 }
 
 // CalculateDistance computes the Haversine distance between two points
