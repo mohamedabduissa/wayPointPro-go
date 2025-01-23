@@ -30,6 +30,7 @@ func (s *Service) choosePlatformAndToken(requiredRequests int) (string, string, 
 		SELECT platform, access_token, request_limit, request_count
 		FROM access_tokens
 		WHERE request_limit - request_count >= $1
+		AND platform = 'mapbox'
 		ORDER BY RANDOM()
 		LIMIT 1
 	`
