@@ -36,7 +36,7 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 	geometry := route.Geometry.Coordinates
 	//_, _ := divideTrafficData(trafficData)
 	// Step 2: Simplify route geometry to reduce the number of segments
-	simplifiedGeometry := o.SimplifyRoute(geometry, 0.0000001) // Adjust tolerance as needed
+	simplifiedGeometry := o.SimplifyRoute(geometry, 0.0001) // Adjust tolerance as needed
 
 	// Step 3: Pre-compute congestion weights to avoid redundant calculations
 	congestionWeights := o.PrecomputeCongestionWeights()
