@@ -67,6 +67,8 @@ func (s *RouteAggregatorService) GetAggregatedRoute(coordinates string, options 
 
 		// 4. Update route duration
 		route.Routes[0].TrafficDuration = adjustedRoute.TrafficDuration
+	} else {
+		route.Routes[0].TrafficDuration = route.Routes[0].Duration
 	}
 
 	return route, nil

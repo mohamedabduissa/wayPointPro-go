@@ -30,35 +30,41 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 	// Step 3: Pre-compute congestion weights to avoid redundant calculations
 	congestionWeights := o.PrecomputeCongestionWeights()
 
-	// Step 4: Process each segment
+	// Step 4: Process each segment of the simplified geometry
 	for i := 0; i < len(simplifiedGeometry)-1; i++ {
 		segment := [2][]float64{simplifiedGeometry[i], simplifiedGeometry[i+1]}
-		counter := 0
+
+		// Check segment against pre-filtered traffic features
 		for _, trafficFeature := range trafficData {
-			classType := trafficFeature["properties"].(map[string]interface{})["class"].(string)
-			congestionLevel := trafficFeature["properties"].(map[string]interface{})["congestion"].(string)
+			properties := trafficFeature["properties"].(map[string]interface{})
+			congestionLevel := properties["congestion"].(string)
+
+			// Only process relevant congestion levels
 			if congestionLevel == "severe" || congestionLevel == "heavy" || congestionLevel == "moderate" {
+				classType := properties["class"].(string)
 				segmentTime := o.CalculateSegmentTime(segment, classType)
+
+				// If the segment overlaps with the traffic feature, adjust time
 				if o.IsSegmentInTraffic(segment, trafficFeature) {
-					congestionLevel := trafficFeature["properties"].(map[string]interface{})["congestion"].(string)
 					adjustedTime := congestionWeights[congestionLevel] * segmentTime
 					totalTime += adjustedTime
-					break
+					break // Process one relevant feature per segment
 				}
-				counter += 1
 			}
 		}
-		log.Printf("counter is %d", counter)
 	}
 
-	// Step 6: Add intersection delays
-	intersectionDelay := adjustLegDurationForIntersections(route.Legs[0])
+	// Step 5: Add intersection delays
+	intersectionDelay := 0.0
+	if len(route.Legs) != 0 {
+		intersectionDelay = adjustLegDurationForIntersections(route.Legs[0])
+	}
 	totalTime += intersectionDelay
 
-	// Step 7: Add a constant buffer time
+	// Step 6: Add a constant buffer time
 	totalTime += 60 // Add buffer time for variability
 
-	// Step 8: Update and return the adjusted route
+	// Step 7: Update and return the adjusted route
 	route.TrafficDuration = totalTime
 	return route
 }
