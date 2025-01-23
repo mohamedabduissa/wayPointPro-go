@@ -52,7 +52,7 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 			congestionLevel := properties["congestion"].(string)
 
 			// Only process relevant congestion levels
-			if congestionLevel == "severe" || congestionLevel == "heavy" {
+			if congestionLevel == "severe" || congestionLevel == "heavy" || congestionLevel == "moderate" {
 				classType := properties["class"].(string)
 				segmentTime := o.CalculateSegmentTime(segment, classType)
 
