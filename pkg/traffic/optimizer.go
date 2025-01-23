@@ -34,7 +34,7 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 	// Step 1: Initialize total time with the original route duration
 	totalTime := route.Duration // Original travel time
 	geometry := route.Geometry.Coordinates
-	dividedPart1, _ := divideTrafficData(trafficData)
+	_, _ := divideTrafficData(trafficData)
 	// Step 2: Simplify route geometry to reduce the number of segments
 	simplifiedGeometry := o.SimplifyRoute(geometry, 0.0000001) // Adjust tolerance as needed
 
@@ -47,12 +47,12 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 
 		// Check segment against pre-filtered traffic features
 		counter := 0
-		for _, trafficFeature := range dividedPart1 {
+		for _, trafficFeature := range trafficData {
 			properties := trafficFeature["properties"].(map[string]interface{})
 			congestionLevel := properties["congestion"].(string)
 
 			// Only process relevant congestion levels
-			if congestionLevel == "severe" || congestionLevel == "heavy" || congestionLevel == "moderate" {
+			if congestionLevel == "severe" || congestionLevel == "heavy" {
 				classType := properties["class"].(string)
 				segmentTime := o.CalculateSegmentTime(segment, classType)
 
