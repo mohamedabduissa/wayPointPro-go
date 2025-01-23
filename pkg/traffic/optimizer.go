@@ -43,8 +43,14 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 
 	// Step 4: Process each segment of the simplified geometry
 	for i := 0; i < len(simplifiedGeometry)-1; i++ {
-		segment := [2][]float64{simplifiedGeometry[i], simplifiedGeometry[i+1]}
+		firstCoor := simplifiedGeometry[i]
+		firstCoor[0] = math.Floor(firstCoor[0]*10000) / 10000 // Truncate longitude
+		firstCoor[1] = math.Floor(firstCoor[1]*10000) / 10000 // Truncate latitude
+		secondCoor := simplifiedGeometry[i+1]
+		secondCoor[0] = math.Floor(secondCoor[0]*10000) / 10000 // Truncate longitude
+		secondCoor[1] = math.Floor(secondCoor[1]*10000) / 10000 // Truncate latitude
 
+		segment := [2][]float64{firstCoor, secondCoor}
 		// Check segment against pre-filtered traffic features
 		counter := 0
 		for _, trafficFeature := range trafficData {
