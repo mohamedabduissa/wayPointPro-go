@@ -6,10 +6,11 @@ import (
 	"io"
 	"log"
 	"sync"
+	"time"
 )
 
 // FetchAndAnalyzeTraffic fetches traffic data and analyzes it for a bounding box
-func (s *Service) FetchAndAnalyzeTraffic(boundingBox map[string]float64, zoom int) ([]map[string]interface{}, error) {
+func (s *Service) FetchAndAnalyzeTraffic(boundingBox map[string]float64, zoom int, withDelay bool) ([]map[string]interface{}, error) {
 	var trafficData []map[string]interface{}
 	//tileRange := s.getTileRange(boundingBox, zoom)
 	tileRange := s.FullGetTileRange(boundingBox, zoom)
@@ -37,8 +38,10 @@ func (s *Service) FetchAndAnalyzeTraffic(boundingBox map[string]float64, zoom in
 		}
 		for _, x := range batch["x"].([]int) {
 			for _, y := range batch["y"].([]int) {
-				// Add a 2-second delay before processing the request
-				//time.Sleep(500 * time.Millisecond)
+				if withDelay {
+					// Add a 2-second delay before processing the request
+					time.Sleep(500 * time.Millisecond)
+				}
 				wg.Add(1)
 				go func(x, y int) {
 					defer wg.Done()

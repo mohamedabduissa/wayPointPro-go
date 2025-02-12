@@ -45,7 +45,6 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 	for i := 0; i < len(simplifiedGeometry)-1; i++ {
 		segment := [2][]float64{simplifiedGeometry[i], simplifiedGeometry[i+1]}
 		// Check segment against pre-filtered traffic features
-		counter := 0
 		for _, trafficFeature := range trafficData {
 			properties := trafficFeature["properties"].(map[string]interface{})
 			congestionLevel := properties["congestion"].(string)
@@ -61,11 +60,8 @@ func (o *Optimizer) AdjustRouteTime(route osrm.Route, trafficData []map[string]i
 					totalTime += adjustedTime
 					break // Process one relevant feature per segment
 				}
-				counter += 1
 			}
 		}
-		log.Printf("counter is %d", counter)
-		counter = 0
 	}
 
 	// Step 5: Add intersection delays

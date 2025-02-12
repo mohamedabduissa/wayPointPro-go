@@ -1,6 +1,7 @@
 package traffic
 
 import (
+	"WayPointPro/internal/config"
 	"WayPointPro/internal/db"
 	"WayPointPro/internal/models"
 	"crypto/sha256"
@@ -32,7 +33,7 @@ func NewCache() *Cache {
 	once.Do(func() {
 		// Initialize the Cache instance only once
 		redisClient := redis.NewClient(&redis.Options{
-			Addr: "localhost:6379", // Redis server address
+			Addr: config.LoadConfig().REDIS, // Redis server address
 		})
 
 		cacheInstance = &Cache{
@@ -50,16 +51,17 @@ func NewCache() *Cache {
 func (c *Cache) SaveTrafficData(trafficData []byte, z, x, y int) error {
 	dayOfWeek := time.Now().Weekday().String()
 	hour := time.Now().Hour()
+	minute := time.Now().Minute() / 15 * 15 // Round to the nearest 15-minute interval
 
 	query := `
-		INSERT INTO traffic_data (tile_z, tile_x, tile_y, day_of_week, hour, traffic_data, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
-		ON CONFLICT (tile_z, tile_x, tile_y, day_of_week, hour)
+		INSERT INTO traffic_data (tile_z, tile_x, tile_y, day_of_week, hour, minute, traffic_data, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, NOW())
+		ON CONFLICT (tile_z, tile_x, tile_y, day_of_week, hour, minute)
 		DO UPDATE SET
 			traffic_data = EXCLUDED.traffic_data,
 			updated_at = NOW()
 	`
-	_, err := c.DB.Exec(query, z, x, y, dayOfWeek, hour, string(trafficData))
+	_, err := c.DB.Exec(query, z, x, y, dayOfWeek, hour, minute, string(trafficData))
 	return err
 }
 
@@ -67,14 +69,15 @@ func (c *Cache) SaveTrafficData(trafficData []byte, z, x, y int) error {
 func (c *Cache) GetTrafficData(z, x, y, rangeTiles int) ([]byte, error) {
 	dayOfWeek := time.Now().Weekday().String()
 	hour := time.Now().Hour()
+	minute := time.Now().Minute() / 15 * 15 // Round to the nearest 15-minute interval
 
 	query := `
 		SELECT traffic_data::text
 		FROM traffic_data
 		WHERE tile_z = $1 AND tile_x BETWEEN $2 AND $3 AND tile_y BETWEEN $4 AND $5
-		AND day_of_week = $6 AND hour = $7
+		AND day_of_week = $6 AND hour = $7 AND minute = $8
 	`
-	row := c.DB.QueryRow(query, z, x-rangeTiles, x+rangeTiles, y-rangeTiles, y+rangeTiles, dayOfWeek, hour)
+	row := c.DB.QueryRow(query, z, x-rangeTiles, x+rangeTiles, y-rangeTiles, y+rangeTiles, dayOfWeek, hour, minute)
 
 	var trafficData string
 	err := row.Scan(&trafficData)
@@ -112,8 +115,25 @@ func (c *Cache) GenerateGecodeCacheKey(query string, lat, lng float64, country, 
 	return cachedKey
 }
 
+// generateCacheKey generates a unique cache key for the request
+func (c *Cache) GenerateRouteCacheKey(coordinates string) string {
+	rawKey := ""
+	rawKey = fmt.Sprintf("route:%s", coordinates)
+	// Optional: Use hashing for consistent length and encoding safety
+	hasher := sha256.New()
+	hasher.Write([]byte(rawKey))
+	cachedKey := hex.EncodeToString(hasher.Sum(nil))
+	return cachedKey
+}
+
 // cacheResponse caches the response in Redis
 func (c *Cache) CacheGecodeResponse(cachedKey string, results []models.GeocodingResult) {
+	data, _ := json.Marshal(results)
+	c.RedisClient.Set(c.CTX, cachedKey, data, 3*time.Hour)
+}
+
+// cacheResponse caches the response in Redis
+func (c *Cache) CacheRouteResponse(cachedKey string, results models.TransformedRoute) {
 	data, _ := json.Marshal(results)
 	c.RedisClient.Set(c.CTX, cachedKey, data, 3*time.Hour)
 }

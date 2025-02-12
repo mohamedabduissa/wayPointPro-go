@@ -2,6 +2,7 @@ package osrm
 
 import (
 	"WayPointPro/internal/config"
+	"WayPointPro/pkg/valhalla"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,9 +15,10 @@ type OSRMService struct {
 }
 
 type RouteResponse struct {
-	Code      string     `json:"code"`
-	Routes    []Route    `json:"routes"`
-	Waypoints []Waypoint `json:"waypoints"`
+	Code      string           `json:"code"`
+	Routes    []Route          `json:"routes"`
+	Waypoints []Waypoint       `json:"waypoints"`
+	Summary   valhalla.Summary `json:"summary"`
 }
 
 type Route struct {
@@ -36,11 +38,13 @@ type Geometry struct {
 
 // Leg structure
 type Leg struct {
-	Steps    []Step  `json:"steps"`
-	Distance float64 `json:"distance"`
-	Duration float64 `json:"duration"`
-	Summary  string  `json:"summary"`
-	Weight   float64 `json:"weight"`
+	Steps     []Step              `json:"steps"`
+	Distance  float64             `json:"distance"`
+	Duration  float64             `json:"duration"`
+	Weight    float64             `json:"weight"`
+	Maneuvers []valhalla.Maneuver `json:"maneuvers"`
+	Summary   valhalla.Summary    `json:"summary"`
+	Shape     string              `json:"shape,omitempty"`
 }
 
 // Step structure
@@ -120,4 +124,43 @@ func (s *OSRMService) GetRoute(coordinates string, options map[string]string) (*
 	}
 
 	return &routeResponse, nil
+}
+
+// Function to convert Valhalla response to OSRM format
+func (s *OSRMService) ConvertToOSRM(valhallaResponse *valhalla.RouteResponse) (*RouteResponse, error) {
+	var osrmResponse RouteResponse
+	osrmResponse.Code = "Ok"
+	osrmResponse.Summary = valhallaResponse.Trip.Summary
+	// Convert waypoints
+	for _, loc := range valhallaResponse.Trip.Locations {
+		osrmResponse.Waypoints = append(osrmResponse.Waypoints, Waypoint{
+			Name:     loc.Type,
+			Distance: 0,
+			Location: []float64{loc.Lon, loc.Lat},
+		})
+	}
+
+	// Convert legs and geometry
+	var route Route
+	route.WeightName = "routability"
+
+	for _, leg := range valhallaResponse.Trip.Legs {
+		var osrmLeg Leg
+		osrmLeg.Distance = leg.Summary.Length
+		osrmLeg.Duration = leg.Summary.Time
+		osrmLeg.Weight = leg.Summary.Cost
+		osrmLeg.Summary = leg.Summary
+		osrmLeg.Maneuvers = leg.Maneuvers
+		route.Geometry = Geometry{}
+		route.Legs = append(route.Legs, osrmLeg)
+	}
+
+	// Compute overall distance and duration
+	for _, leg := range route.Legs {
+		route.Distance += leg.Distance
+		route.Duration += leg.Duration
+	}
+
+	osrmResponse.Routes = append(osrmResponse.Routes, route)
+	return &osrmResponse, nil
 }

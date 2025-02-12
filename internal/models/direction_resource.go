@@ -38,9 +38,14 @@ func TransformRoute(route *osrm.RouteResponse) TransformedRoute {
 
 	// Create Distance
 	distance := route.Routes[0].Distance
+	if distance > 1000 {
+		distance = distance / 1000 * 10
+	} else {
+		distance = distance * 10
+	}
 	distanceObject := DirectionsValueObject{
-		Value: distance,
-		Text:  fmt.Sprintf("%.1f km", math.Round(distance/1000*10)/10),
+		Value: distance / 10,
+		Text:  fmt.Sprintf("%.1f km", math.Round(distance)/10),
 	}
 
 	// Transform and return the route

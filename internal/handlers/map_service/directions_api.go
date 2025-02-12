@@ -3,20 +3,19 @@ package map_service
 import (
 	"WayPointPro/internal/app/services"
 	"WayPointPro/internal/models"
-	"WayPointPro/pkg/osrm"
 	"WayPointPro/pkg/traffic"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
+	"time"
 )
 
 // GetRouteHandler handles requests for route information
 func GetRouteHandler(c *gin.Context) {
 
-	osrmService := osrm.NewOSRMService()
 	trafficService := traffic.NewService()
-	aggregator := services.NewRouteAggregatorService(osrmService, trafficService)
-
+	aggregator := services.NewRouteAggregatorService(trafficService)
 	// Ensure the request method is POST
 	if c.Request.Method != http.MethodPost {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"message": "Method not allowed"})
@@ -57,12 +56,33 @@ func GetRouteHandler(c *gin.Context) {
 		"traffic":    requestBody.Traffic,
 	}
 
+	// Generate a unique cached_key
+	cachedKey := trafficService.Cache.GenerateRouteCacheKey(requestBody.Coordinates)
+	log.Printf("cachedKey: %s", cachedKey)
+	// Check Redis cache
+	cachedData, err := trafficService.Cache.GetFromRedis(cachedKey)
+	if err == nil {
+		log.Printf("Retreived from cache redis")
+		var cachedRoute models.TransformedRoute
+		err := json.Unmarshal(cachedData, &cachedRoute)
+		if err != nil {
+			return
+		}
+		c.JSON(http.StatusOK, cachedRoute)
+		return
+	}
+
 	route, err := aggregator.GetAggregatedRoute(requestBody.Coordinates, options)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to fetch route"})
 		return
 	}
 
+	startTime := time.Now()
 	response := models.TransformRoute(route)
+	trafficService.Cache.CacheRouteResponse(cachedKey, response)
+	duration := time.Since(startTime)
+	log.Printf("response modeling API execution time: %v", duration)
 	c.JSON(http.StatusOK, response)
+
 }

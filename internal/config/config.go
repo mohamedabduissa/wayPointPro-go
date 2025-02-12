@@ -9,13 +9,16 @@ import (
 )
 
 type Config struct {
-	OSRMHost   string
-	Port       string
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
+	ValhallaHost string
+	OSRMHost     string
+	Port         string
+	DBHost       string
+	DBPort       string
+	DBUser       string
+	DBPassword   string
+	DBName       string
+	REDIS        string
+	PLATFORM     string
 }
 
 var (
@@ -30,13 +33,16 @@ func LoadConfig() *Config {
 		}
 
 		config := &Config{
-			OSRMHost:   getEnv("OSRM_HOST", ""),
-			Port:       getEnv("PORT", ""),
-			DBHost:     getEnv("DB_HOST", ""),
-			DBUser:     getEnv("DB_USER", ""),
-			DBPassword: getEnv("DB_PASSWORD", ""),
-			DBName:     getEnv("DB_NAME", ""),
-			DBPort:     getEnv("DB_PORT", "5432"),
+			ValhallaHost: getEnv("VALHALLA_HOST", ""),
+			OSRMHost:     getEnv("OSRM_HOST", ""),
+			Port:         getEnv("PORT", ""),
+			DBHost:       getEnv("DB_HOST", ""),
+			DBUser:       getEnv("DB_USER", ""),
+			DBPassword:   getEnv("DB_PASSWORD", ""),
+			DBName:       getEnv("DB_NAME", ""),
+			DBPort:       getEnv("DB_PORT", "5432"),
+			REDIS:        getEnv("REDIS", ""),
+			PLATFORM:     getEnv("PLATFORM", ""),
 		}
 		instance = config
 	})
