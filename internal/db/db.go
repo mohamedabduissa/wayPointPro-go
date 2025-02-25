@@ -18,8 +18,7 @@ var (
 )
 
 // GetDB returns the singleton database instance
-func Connect() (*pgxpool.Pool, error) {
-	var err error
+func Connect() *pgxpool.Pool {
 	once.Do(func() {
 		cfg := config.LoadConfig()
 		// Build the PostgreSQL connection string (DSN)
@@ -61,7 +60,7 @@ func Connect() (*pgxpool.Pool, error) {
 		instance = dbPool
 		log.Println("✅ Database connection initialized")
 	})
-	return instance, err
+	return instance
 }
 func CloseDB() {
 	if instance != nil {
