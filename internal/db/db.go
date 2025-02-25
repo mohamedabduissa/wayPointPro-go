@@ -2,9 +2,10 @@ package db
 
 import (
 	"WayPointPro/internal/config"
+	"context"
 	"fmt"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq" // PostgreSQL driver
+	"github.com/jackc/pgx/v5/pgxpool" // pgx (better PostgreSQL driver)
+	_ "github.com/lib/pq"             // PostgreSQL driver
 	"log"
 	"strconv"
 	"sync"
@@ -12,19 +13,18 @@ import (
 )
 
 var (
-	instance *sqlx.DB
+	instance *pgxpool.Pool
 	once     sync.Once
 )
 
 // GetDB returns the singleton database instance
-func Connect() *sqlx.DB {
+func Connect() (*pgxpool.Pool, error) {
+	var err error
 	once.Do(func() {
 		cfg := config.LoadConfig()
 		// Build the PostgreSQL connection string (DSN)
-		dbPortStr := cfg.DBPort
-
 		// Convert the string to an integer
-		dbPort, err := strconv.Atoi(dbPortStr)
+		dbPort, err := strconv.Atoi(cfg.DBPort)
 		if err != nil {
 			fmt.Printf("Error converting DB_PORT to int: %v\n", err)
 			return
@@ -36,20 +36,32 @@ func Connect() *sqlx.DB {
 		)
 
 		// Connect to the database
-		db, err := sqlx.Connect("postgres", dsn)
-		if err != nil {
-			log.Fatalf("Failed to connect to database: %v", err)
+		// Create a connection pool
+		poolConfig, poolErr := pgxpool.ParseConfig(dsn)
+		if poolErr != nil {
+			log.Printf("Failed to parse database config: %v\n", poolErr)
+			err = poolErr
+			return
 		}
 
-		// Set connection pool configurations
-		db.SetMaxOpenConns(48)                  // Maximum open connections
-		db.SetMaxIdleConns(24)                  // Maximum idle connections
-		db.SetConnMaxLifetime(30 * time.Minute) // Reuse connections for up to 30 minutes
+		// Optimize connection pool settings
+		poolConfig.MaxConns = 48                      // Max open connections
+		poolConfig.MinConns = 10                      // Min idle connections
+		poolConfig.MaxConnLifetime = 30 * time.Minute // Max lifetime of a connection
+		poolConfig.MaxConnIdleTime = 5 * time.Minute  // Max idle time before closing
 
-		log.Println("Database connection initialized")
-		instance = db
+		// Connect to PostgreSQL
+		dbPool, connectErr := pgxpool.NewWithConfig(context.Background(), poolConfig)
+		if connectErr != nil {
+			log.Printf("Failed to connect to database: %v\n", connectErr)
+			err = connectErr
+			return
+		}
+
+		instance = dbPool
+		log.Println("✅ Database connection initialized")
 	})
-	return instance
+	return instance, err
 }
 func CloseDB() {
 	if instance != nil {
