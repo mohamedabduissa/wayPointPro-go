@@ -26,5 +26,31 @@ PORT=8080
 REDIS=10.0.0.4:6379
 PLATFORM=VALHALLA" > .env
 
-go run cmd/main.go
+go build -o waypointpro cmd/main.go
 
+sudo nano /etc/systemd/system/waypointpro.service
+
+[Unit]
+Description=WayPointPro Go Service
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/wayPointPro-go
+ExecStart=/root/wayPointPro-go/waypointpro
+Restart=always
+EnvironmentFile=/root/wayPointPro-go/.env
+StandardOutput=append:/var/log/waypointpro.log
+StandardError=append:/var/log/waypointpro.log
+
+[Install]
+WantedBy=multi-user.target
+
+
+sudo systemctl daemon-reload
+
+sudo systemctl enable waypointpro
+
+sudo systemctl restart waypointpro
+
+sudo systemctl status waypointpro
