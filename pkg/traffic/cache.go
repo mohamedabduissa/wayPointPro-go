@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/net/context"
 	"log"
@@ -18,7 +19,7 @@ import (
 )
 
 type Cache struct {
-	DB          *sqlx.DB
+	DB          *pgxpool.Pool
 	RedisClient *redis.Client
 	CTX         context.Context
 }
