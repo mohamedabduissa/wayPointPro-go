@@ -6,8 +6,11 @@ import (
 	"WayPointPro/pkg/queue"
 	"WayPointPro/pkg/queue/jobs"
 	"WayPointPro/pkg/queue/scheduler"
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 )
 
@@ -17,10 +20,52 @@ func main() {
 
 	router := routes.InitRoutes()
 
+	// Create HTTP Server
+	srv := &http.Server{
+		Addr:           ":" + cfg.Port,
+		Handler:        router,
+		ReadTimeout:    5 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		IdleTimeout:    120 * time.Second,
+		MaxHeaderBytes: 1 << 20, // 1MB
+	}
+
+	// Create a context to handle graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// Start Queue Processing
 	runQueue()
-	log.Printf("Server running on http://localhost:%s", cfg.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Port, router))
-	log.Printf("exceution time")
+
+	// Start HTTP Server in a Goroutine
+	go func() {
+		log.Printf("🚀 Server running on http://localhost:%s", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("❌ Server error: %v", err)
+		}
+	}()
+
+	// Wait for shutdown signal (Ctrl+C)
+	<-ctx.Done()
+	log.Println("🛑 Shutdown signal received")
+
+	// Measure execution time
+	startTime := time.Now()
+
+	// Stop processing queue safely
+	stop()
+
+	// Gracefully shutdown HTTP server
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("❌ Server forced to shutdown: %v", err)
+	}
+
+	// Log execution time
+	executionTime := time.Since(startTime)
+	log.Printf("✅ Server exited properly. Execution time: %v", executionTime)
 
 }
 

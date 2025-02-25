@@ -7,14 +7,14 @@ import (
 
 // InitRoutes initializes and combines all route groups
 func InitRoutes() *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
 
 	//router := mux.NewRouter()
-
-	// Apply global middleware
-	router.Use(middleware.ExecutionTimeMiddleware())
-	router.Use(middleware.APIKeyMiddleware())
-	router.Use(middleware.RateLimit())
+	// Add essential middlewares
+	router.Use(gin.Recovery())                       // Protect from panics
+	router.Use(middleware.ExecutionTimeMiddleware()) // Log request execution time
+	router.Use(middleware.APIKeyMiddleware())        // API Key validation
+	router.Use(middleware.RateLimit())               // Rate limiting
 
 	// Add route groups
 	registerAPIRoutes(router)
