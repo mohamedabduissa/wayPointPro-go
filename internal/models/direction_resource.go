@@ -38,6 +38,7 @@ func TransformRoute(route *osrm.RouteResponse) TransformedRoute {
 
 	// Create Distance
 	distance := route.Routes[0].Distance
+	distance = 20000
 	//if distance > 1500 {
 	//	distance = distance / 1000 * 10
 	//} else {
