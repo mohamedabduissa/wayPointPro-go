@@ -14,7 +14,7 @@ func RateLimit() gin.HandlerFunc {
 	store := memory.NewStore()
 	rate := limiterpkg.Rate{
 		Period: 1 * time.Minute,
-		Limit:  120000,
+		Limit:  120,
 	}
 	// Create a rate limiter instance
 	limiter := limiterpkg.New(store, rate)
@@ -34,6 +34,7 @@ func RateLimit() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		// Add rate limit headers
 		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", context.Limit))
 		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", context.Remaining))
