@@ -15,8 +15,7 @@ cd wayPointPro-go
 
 go mod tidy
 
-cat <<EOF > .env
-DB_HOST=10.0.0.4
+echo "DB_HOST=10.0.0.4
 DB_PORT=5432
 DB_USER=waypointpro_user
 DB_PASSWORD=Dh3hMMjzhaLq5VL7RT
@@ -25,8 +24,7 @@ OSRM_HOST=http://10.0.0.2:5000
 VALHALLA_HOST=http://10.0.0.2:8002
 PORT=8080
 REDIS=10.0.0.4:6379
-PLATFORM=VALHALLA
-EOF
+PLATFORM=VALHALLA" > .env
 
 go run cmd/main.go
 
