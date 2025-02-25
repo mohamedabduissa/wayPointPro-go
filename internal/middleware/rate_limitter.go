@@ -16,6 +16,7 @@ func RateLimit() gin.HandlerFunc {
 		Period: 1 * time.Minute,
 		Limit:  120,
 	}
+	
 	// Create a rate limiter instance
 	limiter := limiterpkg.New(store, rate)
 
