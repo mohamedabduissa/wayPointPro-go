@@ -151,6 +151,7 @@ func (s *OSRMService) ConvertToOSRM(valhallaResponse *valhalla.RouteResponse) (*
 		osrmLeg.Weight = leg.Summary.Cost
 		osrmLeg.Summary = leg.Summary
 		osrmLeg.Maneuvers = leg.Maneuvers
+		osrmLeg.Shape = leg.Shape
 		route.Geometry = Geometry{}
 		route.Legs = append(route.Legs, osrmLeg)
 	}
