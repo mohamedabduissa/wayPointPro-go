@@ -35,7 +35,7 @@ func (s *Service) choosePlatformAndToken(requiredRequests int) (string, string, 
 		LIMIT 1
 	`
 
-	row := s.Cache.DB.QueryRow(query, requiredRequests)
+	row := s.Cache.DB.QueryRow(s.Cache.CTX, query, requiredRequests)
 
 	var platform, accessToken string
 	var requestLimit, requestCount int
@@ -54,7 +54,7 @@ func (s *Service) updateAccessTokenRequestCount(accessToken string, count int) e
 		SET request_count = request_count + $2
 		WHERE access_token = $1
 	`
-	_, err := s.Cache.DB.Exec(query, accessToken, count)
+	_, err := s.Cache.DB.Exec(s.Cache.CTX, query, accessToken, count)
 	return err
 }
 
@@ -64,6 +64,6 @@ func (s *Service) logRequestToDB(platform, accessToken string, zoom, x, y int) e
 		INSERT INTO request_logs (platform, access_token, zoom, x, y, timestamp)
 		VALUES ($1, $2, $3, $4, $5, NOW())
 	`
-	_, err := s.Cache.DB.Exec(query, platform, accessToken, zoom, x, y)
+	_, err := s.Cache.DB.Exec(s.Cache.CTX, query, platform, accessToken, zoom, x, y)
 	return err
 }

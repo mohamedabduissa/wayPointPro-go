@@ -4,6 +4,7 @@ import (
 	"WayPointPro/internal/config"
 	"WayPointPro/internal/db"
 	"WayPointPro/internal/models"
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
@@ -11,8 +12,6 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jmoiron/sqlx"
-	"golang.org/x/net/context"
 	"log"
 	"sync"
 	"time"
@@ -62,7 +61,7 @@ func (c *Cache) SaveTrafficData(trafficData []byte, z, x, y int) error {
 			traffic_data = EXCLUDED.traffic_data,
 			updated_at = NOW()
 	`
-	_, err := c.DB.Exec(query, z, x, y, dayOfWeek, hour, minute, string(trafficData))
+	_, err := c.DB.Exec(c.CTX, query, z, x, y, dayOfWeek, hour, minute, string(trafficData))
 	return err
 }
 
@@ -78,7 +77,7 @@ func (c *Cache) GetTrafficData(z, x, y, rangeTiles int) ([]byte, error) {
 		WHERE tile_z = $1 AND tile_x BETWEEN $2 AND $3 AND tile_y BETWEEN $4 AND $5
 		AND day_of_week = $6 AND hour = $7 AND minute = $8
 	`
-	row := c.DB.QueryRow(query, z, x-rangeTiles, x+rangeTiles, y-rangeTiles, y+rangeTiles, dayOfWeek, hour, minute)
+	row := c.DB.QueryRow(c.CTX, query, z, x-rangeTiles, x+rangeTiles, y-rangeTiles, y+rangeTiles, dayOfWeek, hour, minute)
 
 	var trafficData string
 	err := row.Scan(&trafficData)
@@ -142,7 +141,7 @@ func (c *Cache) CacheRouteResponse(cachedKey string, results models.TransformedR
 // storeInDatabase stores the geocoding results in the database
 func (c *Cache) SaveGecodeData(cachedKey string, results []models.GeocodingResult) {
 	for _, result := range results {
-		_, err := c.DB.Exec(`
+		_, err := c.DB.Exec(c.CTX, `
 			INSERT INTO geocoding_results 
 			(platform, name, address, latitude, longitude, country, country_code, bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon, cached_key)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -157,11 +156,51 @@ func (c *Cache) SaveGecodeData(cachedKey string, results []models.GeocodingResul
 
 // fetchFromDatabaseByCacheKey retrieves results from the database by cached_key
 func (c *Cache) GetGecodeData(cachedKey string) ([]models.GeocodingResult, error) {
-	var results []models.GeocodingResult
-	err := c.DB.Select(&results, `
-		SELECT platform, name, address, latitude, longitude, country, country_code, bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon
+	//var results []models.GeocodingResult
+	//err := c.DB.Select(&results, `
+	//	SELECT platform, name, address, latitude, longitude, country, country_code, bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon
+	//	FROM geocoding_results
+	//	WHERE cached_key = $1
+	//`, cachedKey)
+	//return results, err
+
+	// Query the database
+	rows, err := c.DB.Query(c.CTX, `
+		SELECT platform, name, address, latitude, longitude, country, country_code, 
+		       bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon
 		FROM geocoding_results
 		WHERE cached_key = $1
 	`, cachedKey)
-	return results, err
+	if err != nil {
+		log.Printf("❌ Error executing query: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Prepare results slice
+	var results []models.GeocodingResult
+
+	// Loop through rows and scan into struct
+	for rows.Next() {
+		var result models.GeocodingResult
+		err := rows.Scan(
+			&result.Platform, &result.Name, &result.Address, &result.Latitude, &result.Longitude,
+			&result.Country, &result.CountryCode,
+			&result.BoundingBoxTopLeftLat, &result.BoundingBoxTopLeftLon,
+			&result.BoundingBoxBottomRightLat, &result.BoundingBoxBottomRightLon,
+		)
+		if err != nil {
+			log.Printf("❌ Error scanning row: %v", err)
+			return nil, err
+		}
+		results = append(results, result)
+	}
+
+	// Check for errors from iteration
+	if err := rows.Err(); err != nil {
+		log.Printf("❌ Row iteration error: %v", err)
+		return nil, err
+	}
+
+	return results, nil
 }

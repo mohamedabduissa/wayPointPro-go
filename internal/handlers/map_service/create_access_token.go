@@ -33,7 +33,7 @@ func CreateAccessTokenHandler(c *gin.Context) {
 	}
 	cache := traffic.NewCache()
 
-	_, err := cache.DB.Exec(`
+	_, err := cache.DB.Exec(cache.CTX, `
 			INSERT INTO access_tokens (platform, access_token, request_limit, reset_date)
 			VALUES ($1, $2, $3, $4)
 		`, platform, accessToken, request_limit, time.Now())
@@ -49,7 +49,7 @@ func ListAccessTokenHandler(c *gin.Context) {
 
 	cache := traffic.NewCache()
 
-	rows, err := cache.DB.Query(`
+	rows, err := cache.DB.Query(cache.CTX, `
 			SELECT * FROM access_tokens 
 		`)
 	if err != nil {
@@ -91,7 +91,7 @@ func DeleteAccessTokenHandler(c *gin.Context) {
 	}
 	cache := traffic.NewCache()
 
-	_, err := cache.DB.Exec(`
+	_, err := cache.DB.Exec(cache.CTX, `
 			DELETE FROM access_tokens where access_token = $1;
 		`, accessToken)
 	if err != nil {

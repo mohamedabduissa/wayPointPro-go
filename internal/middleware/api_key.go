@@ -36,7 +36,7 @@ func APIKeyMiddleware() gin.HandlerFunc {
 
 		// If not in Redis, query the database
 		var count int
-		err = cache.DB.QueryRow("SELECT COUNT(*) FROM api_access_token WHERE access_token = $1", apiKey).Scan(&count)
+		err = cache.DB.QueryRow(cache.CTX, "SELECT COUNT(*) FROM api_access_token WHERE access_token = $1", apiKey).Scan(&count)
 
 		if err != nil || count == 0 {
 			// Store invalid API key result in Redis to prevent repeated DB lookups

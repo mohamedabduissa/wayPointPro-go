@@ -15,7 +15,7 @@ func ResetRequestLimit() {
 	// Check if it's the first day of the month
 	if now.Day() == 1 {
 		query := `UPDATE access_tokens SET request_count = 0, reset_date = $1`
-		_, err := cache.DB.Exec(query, time.Now())
+		_, err := cache.DB.Exec(cache.CTX, query, time.Now())
 		if err != nil {
 			log.Println("Failed to reset request counts:", err)
 		}
