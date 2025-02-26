@@ -55,6 +55,7 @@ func GetRouteHandler(c *gin.Context) {
 		"geometries": "geojson",
 		"steps":      legs,
 		"traffic":    requestBody.Traffic,
+		"costing":    "auto",
 		"alternates": requestBody.Alternates,
 	}
 
