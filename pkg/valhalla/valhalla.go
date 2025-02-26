@@ -25,7 +25,8 @@ type RouteRequest struct {
 
 // Response Struct for Valhalla API
 type RouteResponse struct {
-	Trip Trip `json:"trip"`
+	Trip       Trip            `json:"trip"`
+	Alternates []RouteResponse `json:"alternates"`
 }
 
 type Trip struct {

@@ -162,6 +162,20 @@ func (s *OSRMService) ConvertToOSRM(valhallaResponse *valhalla.RouteResponse) (*
 		route.Duration += leg.Duration
 	}
 
+	for _, alternate := range valhallaResponse.Alternates {
+		for _, leg := range alternate.Trip.Legs {
+			var osrmLeg Leg
+			osrmLeg.Distance = leg.Summary.Length
+			osrmLeg.Duration = leg.Summary.Time
+			osrmLeg.Weight = leg.Summary.Cost
+			osrmLeg.Summary = leg.Summary
+			osrmLeg.Maneuvers = leg.Maneuvers
+			osrmLeg.Shape = leg.Shape
+			route.Geometry = Geometry{}
+			route.Legs = append(route.Legs, osrmLeg)
+		}
+	}
+
 	osrmResponse.Routes = append(osrmResponse.Routes, route)
 	return &osrmResponse, nil
 }
