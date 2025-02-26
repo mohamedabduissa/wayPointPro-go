@@ -24,9 +24,10 @@ func GetRouteHandler(c *gin.Context) {
 
 	// Parse JSON body
 	var requestBody struct {
-		Coordinates string `json:"coordinates"`
-		Legs        string `json:"legs"`
-		Traffic     string `json:"traffic"`
+		Coordinates  string `json:"coordinates"`
+		Legs         string `json:"legs"`
+		Traffic      string `json:"traffic"`
+		Alternatives string `json:"alternatives"`
 	}
 	if err := json.NewDecoder(c.Request.Body).Decode(&requestBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON body"})
@@ -50,10 +51,11 @@ func GetRouteHandler(c *gin.Context) {
 
 	// Options for the route
 	options := map[string]string{
-		"overview":   "full",
-		"geometries": "geojson",
-		"steps":      legs,
-		"traffic":    requestBody.Traffic,
+		"overview":     "full",
+		"geometries":   "geojson",
+		"steps":        legs,
+		"traffic":      requestBody.Traffic,
+		"alternatives": requestBody.Alternatives,
 	}
 
 	// Generate a unique cached_key

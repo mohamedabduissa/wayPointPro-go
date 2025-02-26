@@ -20,6 +20,7 @@ type RouteRequest struct {
 	Costing   string     `json:"costing"`
 	//CostingOptions    CostingOptions    `json:"costing_options,omitempty"`
 	DirectionsOptions DirectionsOptions `json:"directions_options,omitempty"`
+	Alternates        int               `json:"alternates,omitempty"`
 }
 
 // Response Struct for Valhalla API
@@ -95,16 +96,25 @@ func NewValhallaService() *ValhallaService {
 }
 
 // Function to request a route from Valhalla API
-func (s *ValhallaService) GetRoute(locations []Location, costing string) (*RouteResponse, error) {
+func (s *ValhallaService) GetRoute(locations []Location, options map[string]string) (*RouteResponse, error) {
 	url := fmt.Sprintf("%s/route", s.BaseURL)
 
 	// Construct the request payload
 	requestData := RouteRequest{
 		Locations: locations,
-		Costing:   costing,
+		//Costing:   costing,
 		DirectionsOptions: DirectionsOptions{
 			Units: "kilometers",
 		},
+	}
+
+	for key, value := range options {
+		if key == "costing" {
+			requestData.Costing = value
+		}
+		if key == "alternates" {
+			requestData.Alternates = 3
+		}
 	}
 
 	// Set optional costing parameters

@@ -44,7 +44,7 @@ func (s *RouteAggregatorService) GetValhallaService(coordinates string, options 
 		return nil, err
 	}
 
-	route, err := s.ValhallaService.GetRoute(coordinatesList, "auto")
+	route, err := s.ValhallaService.GetRoute(coordinatesList, options)
 	if err != nil {
 		log.Printf("Error fetching route: %v", err)
 		return nil, err
