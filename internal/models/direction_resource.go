@@ -12,6 +12,8 @@ type DirectionsValueObject struct {
 }
 
 type TransformedRoute struct {
+	Status          bool                  `json:"status"`
+	Message         string                `json:"message"`
 	Distance        DirectionsValueObject `json:"distance"`
 	TrafficDuration DirectionsValueObject `json:"traffic_duration"`
 	Duration        DirectionsValueObject `json:"duration"`
@@ -52,6 +54,8 @@ func TransformRoute(route *osrm.RouteResponse) TransformedRoute {
 
 	// Transform and return the route
 	return TransformedRoute{
+		Status:          true,
+		Message:         "Fetched route successfully!",
 		Distance:        distanceObject,
 		TrafficDuration: trafficDurationObject,
 		Duration:        durationObject,

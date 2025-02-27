@@ -18,7 +18,7 @@ func GetRouteHandler(c *gin.Context) {
 	aggregator := services.NewRouteAggregatorService(trafficService)
 	// Ensure the request method is POST
 	if c.Request.Method != http.MethodPost {
-		c.JSON(http.StatusMethodNotAllowed, gin.H{"message": "Method not allowed"})
+		c.JSON(http.StatusMethodNotAllowed, gin.H{"status": false, "message": "Method not allowed"})
 		return
 	}
 
@@ -30,13 +30,13 @@ func GetRouteHandler(c *gin.Context) {
 		Alternates  string `json:"alternates"`
 	}
 	if err := json.NewDecoder(c.Request.Body).Decode(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON body"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": false, "message": "Invalid JSON body"})
 		return
 	}
 
 	// Validate coordinates
 	if requestBody.Coordinates == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Missing 'coordinates' parameter"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": false, "message": "Missing 'coordinates' parameter"})
 		return
 	}
 
@@ -77,7 +77,7 @@ func GetRouteHandler(c *gin.Context) {
 
 	route, err := aggregator.GetAggregatedRoute(requestBody.Coordinates, options)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to fetch route"})
+		c.JSON(http.StatusInternalServerError, gin.H{"status": false, "message": "Failed to fetch route"})
 		return
 	}
 
