@@ -4,6 +4,7 @@ import (
 	"WayPointPro/pkg/osrm"
 	"fmt"
 	"math"
+	"math/rand"
 )
 
 type DirectionsValueObject struct {
@@ -25,7 +26,8 @@ type TransformedRoute struct {
 // TransformRoute transforms the OSRM route data into the desired format
 func TransformRoute(route *osrm.RouteResponse) TransformedRoute {
 	// Create DurationObject
-	duration := route.Routes[0].Duration
+	randomNumber := float64(rand.Intn(61) + 120) // 61 = (180 - 120 + 1)
+	duration := route.Routes[0].Duration + randomNumber
 	durationObject := DirectionsValueObject{
 		Value: duration,
 		Text:  fmt.Sprintf("%.1f mins", math.Round(duration/60*10)/10),
