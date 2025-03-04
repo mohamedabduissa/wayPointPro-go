@@ -113,7 +113,7 @@ func (s *ValhallaService) GetRoute(locations []Location, options map[string]stri
 		if key == "costing" {
 			requestData.Costing = value
 		}
-		if key == "alternates" {
+		if key == "alternates" && value != "" {
 			requestData.Alternates = 3
 		}
 	}
