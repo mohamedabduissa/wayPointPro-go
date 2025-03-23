@@ -73,7 +73,6 @@ func GetGeCodingHandler(c *gin.Context) {
 		// Cache the database results in Redis
 		gecoderService.Cache.CacheGecodeResponse(cachedKey, cachedGeocoder)
 		log.Printf("Retreived from cache db")
-
 		response(cachedGeocoder, c)
 		return
 	}

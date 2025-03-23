@@ -135,8 +135,16 @@ func (c *Cache) GenerateRouteCacheKey(coordinates string) string {
 
 // cacheResponse caches the response in Redis
 func (c *Cache) CacheGecodeResponse(cachedKey string, results []models.GeocodingResult) {
-	data, _ := json.Marshal(results)
-	c.RedisClient.Set(c.CTX, cachedKey, data, 3*time.Hour)
+	data, err := json.Marshal(results)
+	if err != nil {
+		log.Printf("Failed to marshal geocoding results: %v", err)
+		return
+	}
+
+	err = c.RedisClient.Set(c.CTX, cachedKey, data, 3*time.Hour).Err()
+	if err != nil {
+		log.Printf("Failed to cache geocoding result in Redis: %v", err)
+	}
 }
 
 // cacheResponse caches the response in Redis
