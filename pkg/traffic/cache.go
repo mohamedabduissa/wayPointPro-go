@@ -35,14 +35,7 @@ func NewCache() *Cache {
 		redisClient := redis.NewClient(&redis.Options{
 			Addr: config.LoadConfig().REDIS, // Redis server address
 		})
-
-		pong, err := redisClient.Ping(context.Background()).Result()
-		if err != nil {
-			log.Fatalf("Failed to connect to Redis: %v", err)
-		}
-
-		log.Printf("Redis is alive: %s", pong)
-
+		
 		cacheInstance = &Cache{
 			DB:          db.Connect(),
 			RedisClient: redisClient,
@@ -145,7 +138,7 @@ func (c *Cache) CacheGecodeResponse(cachedKey string, results []models.Geocoding
 	if err != nil {
 		log.Printf("Failed to cache geocoding result in Redis: %v", err)
 	}
-	
+
 }
 
 // cacheResponse caches the response in Redis
