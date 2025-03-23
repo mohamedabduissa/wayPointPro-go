@@ -36,6 +36,13 @@ func NewCache() *Cache {
 			Addr: config.LoadConfig().REDIS, // Redis server address
 		})
 
+		pong, err := redisClient.Ping(context.Background()).Result()
+		if err != nil {
+			log.Fatalf("Failed to connect to Redis: %v", err)
+		}
+
+		log.Printf("Redis is alive: %s", pong)
+
 		cacheInstance = &Cache{
 			DB:          db.Connect(),
 			RedisClient: redisClient,
