@@ -35,7 +35,7 @@ func NewCache() *Cache {
 		redisClient := redis.NewClient(&redis.Options{
 			Addr: config.LoadConfig().REDIS, // Redis server address
 		})
-		
+
 		cacheInstance = &Cache{
 			DB:          db.Connect(),
 			RedisClient: redisClient,
