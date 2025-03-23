@@ -54,3 +54,5 @@ sudo systemctl enable waypointpro
 sudo systemctl restart waypointpro
 
 sudo systemctl status waypointpro
+
+journalctl -u waypointpro.service --since "1 hour ago" --no-pager
