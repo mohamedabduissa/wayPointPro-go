@@ -10,12 +10,12 @@ import (
 
 // Define the struct for access_tokens
 type AccessToken struct {
-	ID           int    `json:"id"`
-	Platform     string `json:"platform"`
-	AccessToken  string `json:"access_token"`
-	RequestLimit int    `json:"request_limit"`
-	RequestCount int    `json:"request_count"`
-	ResetDate    string `json:"reset_date"` // Use time.Time for a parsed time representation
+	ID           int       `json:"id"`
+	Platform     string    `json:"platform"`
+	AccessToken  string    `json:"access_token"`
+	RequestLimit int       `json:"request_limit"`
+	RequestCount int       `json:"request_count"`
+	ResetDate    time.Time `json:"reset_date"` // Use time.Time for a parsed time representation
 }
 
 // CreateAccessTokenHandler handles requests for route information
