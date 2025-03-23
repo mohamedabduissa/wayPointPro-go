@@ -125,7 +125,7 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 		if country != "" {
 			queryStrings += "&countrySet=" + country
 		}
-		if lang != "" {
+		if lang != "" && lang != "en" {
 			queryStrings += "&language=" + lang
 		}
 		queryStrings += "&limit=" + strconv.Itoa(limit)
