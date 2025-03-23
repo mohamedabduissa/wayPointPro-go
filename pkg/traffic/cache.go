@@ -145,6 +145,7 @@ func (c *Cache) CacheGecodeResponse(cachedKey string, results []models.Geocoding
 	if err != nil {
 		log.Printf("Failed to cache geocoding result in Redis: %v", err)
 	}
+	
 }
 
 // cacheResponse caches the response in Redis
