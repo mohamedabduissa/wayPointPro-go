@@ -78,11 +78,11 @@ func runQueue() {
 	s := scheduler.NewScheduler()
 
 	// Add tasks to the scheduler
-	s.AddTask(15*time.Minute, queue.Job{
-		ID:      1,
-		Name:    "Collect traffic",
-		Execute: jobs.CollectTrafficJobHandle,
-	})
+	//s.AddTask(15*time.Minute, queue.Job{
+	//	ID:      1,
+	//	Name:    "Collect traffic",
+	//	Execute: jobs.CollectTrafficJobHandle,
+	//})
 
 	// Add tasks to the scheduler
 	s.AddTask(24*time.Hour, queue.Job{
