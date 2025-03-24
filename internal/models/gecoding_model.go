@@ -139,7 +139,6 @@ func ParseTomTomResponse(body []byte) ([]GeocodingResult, error) {
 	var results []GeocodingResult
 	for _, result := range response.Results {
 		var addressName = result.Address.FreeformAddress
-		fmt.Println("result.Poi.Name ,", result.Poi.Name)
 		if result.Poi.Name != "" {
 			addressName = result.Poi.Name
 		}

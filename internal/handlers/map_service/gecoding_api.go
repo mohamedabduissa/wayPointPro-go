@@ -15,7 +15,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	gecoderService := services.NewGecodeService()
 
 	// Delete all rows from the table
-	_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, `DELETE FROM geocoding_results`)
+	//_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, `DELETE FROM geocoding_results`)
 
 	// Parse query parameters
 	query := c.Query("query")
