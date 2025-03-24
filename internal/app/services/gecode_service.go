@@ -33,7 +33,8 @@ func (s *GecodeService) choosePlatformAndToken(requiredRequests int) (string, st
 	query := `
 		SELECT platform, access_token, request_limit, request_count
 		FROM access_tokens
-		WHERE request_limit - request_count >= $1
+		WHERE platform = 'tomtom'
+		AND request_limit - request_count >= $1
 		ORDER BY RANDOM()
 		LIMIT 1
 	`
@@ -131,7 +132,7 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 		queryStrings += "&limit=" + strconv.Itoa(limit)
 
 		if query != "" {
-			return fmt.Sprintf("https://api.tomtom.com/search/2/geocode/%s.json%s",
+			return fmt.Sprintf("https://api.tomtom.com/search/2/search/%s.json%s",
 				encodedQuery, queryStrings)
 		}
 		return fmt.Sprintf("https://api.tomtom.com/search/2/reverseGeocode/%f,%f.json%s",
