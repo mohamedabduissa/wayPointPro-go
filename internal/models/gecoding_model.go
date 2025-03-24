@@ -138,9 +138,9 @@ func ParseTomTomResponse(body []byte) ([]GeocodingResult, error) {
 
 	var results []GeocodingResult
 	for _, result := range response.Results {
-		var addressName = result.Poi.Name
-		if addressName != "" {
-			addressName = result.Address.FreeformAddress
+		var addressName = result.Address.FreeformAddress
+		if result.Poi.Name != "" {
+			addressName = result.Poi.Name
 		}
 		results = append(results, GeocodingResult{
 			Platform:                  "tomtom",
