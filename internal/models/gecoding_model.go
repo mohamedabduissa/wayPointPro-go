@@ -138,9 +138,13 @@ func ParseTomTomResponse(body []byte) ([]GeocodingResult, error) {
 
 	var results []GeocodingResult
 	for _, result := range response.Results {
+		var addressName = result.Poi.Name
+		if addressName != "" {
+			addressName = result.Address.FreeformAddress
+		}
 		results = append(results, GeocodingResult{
 			Platform:                  "tomtom",
-			Name:                      result.Poi.Name, // TomTom often omits names
+			Name:                      addressName, // TomTom often omits names
 			Address:                   result.Address.FreeformAddress,
 			Latitude:                  result.Position.Lat,
 			Longitude:                 result.Position.Lon,
