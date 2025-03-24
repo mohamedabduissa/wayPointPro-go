@@ -98,6 +98,9 @@ func ParseMapboxResponse(body []byte) ([]GeocodingResult, error) {
 func ParseTomTomResponse(body []byte) ([]GeocodingResult, error) {
 	var response struct {
 		Results []struct {
+			Poi struct {
+				Name string `json:"name"`
+			} `json:"poi"`
 			Address struct {
 				Country         string `json:"country"`
 				CountryCode     string `json:"countryCode"`
@@ -137,7 +140,7 @@ func ParseTomTomResponse(body []byte) ([]GeocodingResult, error) {
 	for _, result := range response.Results {
 		results = append(results, GeocodingResult{
 			Platform:                  "tomtom",
-			Name:                      result.Address.FreeformAddress, // TomTom often omits names
+			Name:                      result.Poi.Name, // TomTom often omits names
 			Address:                   result.Address.FreeformAddress,
 			Latitude:                  result.Position.Lat,
 			Longitude:                 result.Position.Lon,
