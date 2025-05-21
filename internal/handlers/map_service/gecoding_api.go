@@ -24,8 +24,8 @@ func GetGeCodingHandler(c *gin.Context) {
 	country := c.Query("country")
 	lang := c.Query("lang")
 	limitStr := c.Query("limit")
-	var radius int
-	var categorySet int
+	var radius int = 0
+	var categorySet int = 0
 	// Default limit to 10 if not provided
 	limit := 5
 	if limitStr != "" {
@@ -46,8 +46,6 @@ func GetGeCodingHandler(c *gin.Context) {
 		}
 	}
 
-	log.Printf("radius: %d, categorySet: %d", radius, categorySet)
-	
 	// Validate inputs
 	if query == "" && (latStr == "" || lngStr == "") {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request: Provide either 'query' or 'lat' and 'lng'"})
@@ -68,6 +66,8 @@ func GetGeCodingHandler(c *gin.Context) {
 			return
 		}
 	}
+
+	log.Printf("lat is %f, lng is %f", lat, lng)
 
 	// Generate a unique cached_key
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(query, lat, lng, country, lang, limit)
@@ -98,7 +98,7 @@ func GetGeCodingHandler(c *gin.Context) {
 		log.Printf("Error fetching gecoder from cache DB")
 	}
 
-	geocoding, err := gecoderService.FetchAndParseGeocoding(query, lat, lng, country, lang, limit)
+	geocoding, err := gecoderService.FetchAndParseGeocoding(query, lat, lng, country, lang, limit, radius, categorySet)
 	if err != nil {
 		return
 	}

@@ -73,13 +73,13 @@ func (s *GecodeService) logRequestToDB(platform, accessToken string, zoom, x, y 
 }
 
 // Main logic for fetching and parsing geocoding data
-func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, country, lang string, limit int) ([]models.GeocodingResult, error) {
+func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, country, lang string, limit int, radius int, categorySet int) ([]models.GeocodingResult, error) {
 	platform, token, err := s.choosePlatformAndToken(1)
 	if err != nil {
 		return nil, err
 	}
 
-	url := s.BuildGeocodingURL(platform, query, lat, lng, country, lang, limit, token)
+	url := s.BuildGeocodingURL(platform, query, lat, lng, country, lang, limit, radius, categorySet, token)
 	s.updateAccessTokenRequestCount(token, 1)
 	log.Printf("Fetching geocoding url: %s", url)
 	body, err := s.FetchGeocodingData(url)
@@ -98,7 +98,7 @@ func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, c
 }
 
 // Build URL dynamically
-func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float64, country, lang string, limit int, token string) string {
+func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float64, country, lang string, limit, radius, categorySet int, token string) string {
 	encodedQuery := url.QueryEscape(query)
 
 	switch platform {
@@ -130,6 +130,13 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 			queryStrings += "&language=" + lang
 		}
 		queryStrings += "&limit=" + strconv.Itoa(limit)
+
+		if radius != 0 {
+			queryStrings += "&radius=" + strconv.Itoa(radius)
+		}
+		if categorySet != 0 {
+			queryStrings += "&categorySet=" + strconv.Itoa(categorySet)
+		}
 
 		if query != "" {
 			return fmt.Sprintf("https://api.tomtom.com/search/2/search/%s.json%s",
