@@ -4,10 +4,12 @@ import (
 	"WayPointPro/internal/app/services"
 	"WayPointPro/internal/models"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // GetGeCodingHandler handles requests for route information
@@ -70,6 +72,53 @@ func GetGeCodingHandler(c *gin.Context) {
 	// Generate a unique cached_key
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(query, lat, lng, country, lang, limit)
 	log.Printf("cachedKey: %s", cachedKey)
+
+	if c.Query("reset") != "" {
+		err := gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX).Err()
+
+		cachedKeys := []string{
+			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "EG", "ar", 10),
+
+			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "EG", "ar", 10),
+
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "EG", "ar", 10),
+		}
+
+		// Build placeholder string: $1, $2, ..., $n
+		placeholders := make([]string, len(cachedKeys))
+		args := make([]interface{}, len(cachedKeys))
+
+		for i, key := range cachedKeys {
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+			args[i] = key
+		}
+
+		query := fmt.Sprintf(
+			`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
+			strings.Join(placeholders, ", "),
+		)
+
+		_, err := gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+		if err != nil {
+			log.Printf("Failed to delete cache keys: %v", err)
+		}
+	}
+
 	// Check Redis cache
 	cachedData, err := gecoderService.Cache.GetFromRedis(cachedKey)
 	if err == nil {
