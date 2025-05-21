@@ -115,7 +115,7 @@ func GetGeCodingHandler(c *gin.Context) {
 			strings.Join(placeholders, ", "),
 		)
 
-		gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+		_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
 
 	}
 
