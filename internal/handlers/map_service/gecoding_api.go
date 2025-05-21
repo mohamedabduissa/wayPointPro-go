@@ -73,6 +73,10 @@ func GetGeCodingHandler(c *gin.Context) {
 	var keyQuery string
 	if categorySet != 0 {
 		keyQuery = strconv.Itoa(categorySet)
+		if lat != 0 && lng != 0 {
+			// Append lat & lng to differentiate cache keys for same category but different locations
+			keyQuery += fmt.Sprintf("_%.4f_%.4f", lat, lng)
+		}
 	} else {
 		keyQuery = query
 	}
