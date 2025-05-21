@@ -136,6 +136,7 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 		}
 		if categorySet != 0 {
 			queryStrings += "&categorySet=" + strconv.Itoa(categorySet)
+			encodedQuery = ""
 		}
 		if lat != 0 {
 			queryStrings += "&lat=" + fmt.Sprintf("%.6f", lat)
