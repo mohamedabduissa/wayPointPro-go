@@ -73,6 +73,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(query, lat, lng, country, lang, limit)
 	log.Printf("cachedKey: %s", cachedKey)
 
+	log.Printf("customParamters", c.Query("custom"))
 	if c.Query("reset") != "" {
 		err := gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX).Err()
 
