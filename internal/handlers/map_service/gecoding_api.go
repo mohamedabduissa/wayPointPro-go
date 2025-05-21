@@ -24,7 +24,8 @@ func GetGeCodingHandler(c *gin.Context) {
 	country := c.Query("country")
 	lang := c.Query("lang")
 	limitStr := c.Query("limit")
-
+	var radius int
+	var categorySet int
 	// Default limit to 10 if not provided
 	limit := 5
 	if limitStr != "" {
@@ -33,6 +34,20 @@ func GetGeCodingHandler(c *gin.Context) {
 		}
 	}
 
+	if c.Query("radius") != "" {
+		if l, err := strconv.Atoi(c.Query("radius")); err == nil {
+			radius = l
+		}
+	}
+
+	if c.Query("categorySet") != "" {
+		if l, err := strconv.Atoi(c.Query("categorySet")); err == nil {
+			categorySet = l
+		}
+	}
+
+	log.Printf("radius: %d, categorySet: %d", radius, categorySet)
+	
 	// Validate inputs
 	if query == "" && (latStr == "" || lngStr == "") {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request: Provide either 'query' or 'lat' and 'lng'"})
