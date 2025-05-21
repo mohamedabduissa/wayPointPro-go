@@ -70,7 +70,13 @@ func GetGeCodingHandler(c *gin.Context) {
 	}
 
 	// Generate a unique cached_key
-	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(query, lat, lng, country, lang, limit)
+	var keyQuery string
+	if categorySet != 0 {
+		keyQuery = strconv.Itoa(categorySet)
+	} else {
+		keyQuery = query
+	}
+	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(keyQuery, lat, lng, country, lang, limit)
 	log.Printf("cachedKey: %s", cachedKey)
 
 	log.Printf("customParamters", c.Query("custom"))
