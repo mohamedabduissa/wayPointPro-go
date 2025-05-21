@@ -115,10 +115,8 @@ func GetGeCodingHandler(c *gin.Context) {
 			strings.Join(placeholders, ", "),
 		)
 
-		_, err := gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
-		if err != nil {
-			log.Printf("Failed to delete cache keys: %v", err)
-		}
+		gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+
 	}
 
 	// Check Redis cache
