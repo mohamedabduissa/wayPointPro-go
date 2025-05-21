@@ -137,7 +137,12 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 		if categorySet != 0 {
 			queryStrings += "&categorySet=" + strconv.Itoa(categorySet)
 		}
-
+		if lat != 0 {
+			queryStrings += "&lat=" + fmt.Sprintf("%.6f", lat)
+		}
+		if lng != 0 {
+			queryStrings += "&lon=" + fmt.Sprintf("%.6f", lng)
+		}
 		if query != "" {
 			return fmt.Sprintf("https://api.tomtom.com/search/2/search/%s.json%s",
 				encodedQuery, queryStrings)

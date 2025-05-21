@@ -67,8 +67,6 @@ func GetGeCodingHandler(c *gin.Context) {
 		}
 	}
 
-	log.Printf("lat is %f, lng is %f", lat, lng)
-
 	// Generate a unique cached_key
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(query, lat, lng, country, lang, limit)
 	log.Printf("cachedKey: %s", cachedKey)
