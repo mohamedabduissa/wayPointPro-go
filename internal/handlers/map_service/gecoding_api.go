@@ -81,6 +81,10 @@ func GetGeCodingHandler(c *gin.Context) {
 	} else {
 		keyQuery = query
 	}
+
+	if sessionToken != "" {
+		keyQuery += "_google"
+	}
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(keyQuery, lat, lng, country, lang, limit)
 	log.Printf("cachedKey: %s", cachedKey)
 
