@@ -30,17 +30,17 @@ func NewGecodeService() *GecodeService {
 }
 
 // Choose platform and access token dynamically
-func (s *GecodeService) choosePlatformAndToken(requiredRequests int) (string, string, error) {
+func (s *GecodeService) choosePlatformAndToken(requiredRequests int, requiredPlatform string) (string, string, error) {
 	query := `
 		SELECT platform, access_token, request_limit, request_count
 		FROM access_tokens
-		WHERE platform = 'google'
+		WHERE platform = $2
 		AND request_limit - request_count >= $1
 		ORDER BY RANDOM()
 		LIMIT 1
 	`
 
-	row := s.Cache.DB.QueryRow(s.Cache.CTX, query, requiredRequests)
+	row := s.Cache.DB.QueryRow(s.Cache.CTX, query, requiredRequests, requiredPlatform)
 
 	var platform, accessToken string
 	var requestLimit, requestCount int
@@ -75,7 +75,11 @@ func (s *GecodeService) logRequestToDB(platform, accessToken string, zoom, x, y 
 
 // Main logic for fetching and parsing geocoding data
 func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, country, lang string, limit int, radius int, categorySet int, sessionToken string) ([]models.GeocodingResult, error) {
-	platform, token, err := s.choosePlatformAndToken(1)
+	requiredPlatform := "tomtom"
+	if sessionToken != "" {
+		requiredPlatform = "google"
+	}
+	platform, token, err := s.choosePlatformAndToken(1, requiredPlatform)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +214,7 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 
 // Fetch and parse Google Place Details by Place ID only
 func (s *GecodeService) FetchGooglePlaceDetails(placeID string, lang string, sessionToken string) ([]models.GeocodingResult, error) {
-	_, token, err := s.choosePlatformAndToken(1)
+	_, token, err := s.choosePlatformAndToken(1, "google")
 	if err != nil {
 		return nil, err
 	}
