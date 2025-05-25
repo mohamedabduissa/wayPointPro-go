@@ -13,6 +13,7 @@ func registerAPIRoutes(router *gin.Engine) {
 	{
 		apiRouter.POST("/route", map_service.GetRouteHandler)                       // POST /api/route
 		apiRouter.GET("/gecode", map_service.GetGeCodingHandler)                    // GET /api/gecode
+		apiRouter.GET("/place_details", map_service.GetPlaceDetailsHandler)         // GET /api/place_details
 		apiRouter.GET("/create_access_token", map_service.CreateAccessTokenHandler) // GET /api/gecode
 		apiRouter.GET("/list_access_token", map_service.ListAccessTokenHandler)     // GET /api/gecode
 		apiRouter.GET("/delete_access_token", map_service.DeleteAccessTokenHandler) // GET /api/gecode

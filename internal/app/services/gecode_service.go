@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func (s *GecodeService) choosePlatformAndToken(requiredRequests int) (string, st
 	query := `
 		SELECT platform, access_token, request_limit, request_count
 		FROM access_tokens
-		WHERE platform = 'tomtom'
+		WHERE platform = 'google'
 		AND request_limit - request_count >= $1
 		ORDER BY RANDOM()
 		LIMIT 1
@@ -73,13 +74,14 @@ func (s *GecodeService) logRequestToDB(platform, accessToken string, zoom, x, y 
 }
 
 // Main logic for fetching and parsing geocoding data
-func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, country, lang string, limit int, radius int, categorySet int) ([]models.GeocodingResult, error) {
+func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, country, lang string, limit int, radius int, categorySet int, sessionToken string) ([]models.GeocodingResult, error) {
 	platform, token, err := s.choosePlatformAndToken(1)
 	if err != nil {
 		return nil, err
 	}
 
-	url := s.BuildGeocodingURL(platform, query, lat, lng, country, lang, limit, radius, categorySet, token)
+	url := s.BuildGeocodingURL(platform, query, lat, lng, country, lang, limit, radius, categorySet, token, sessionToken)
+
 	s.updateAccessTokenRequestCount(token, 1)
 	log.Printf("Fetching geocoding url: %s", url)
 	body, err := s.FetchGeocodingData(url)
@@ -92,13 +94,16 @@ func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, c
 		return models.ParseMapboxResponse(body)
 	case "tomtom":
 		return models.ParseTomTomResponse(body)
+	case "google":
+		return models.ParseGoogleAutocompleteResponse(body)
+
 	default:
 		return nil, fmt.Errorf("unsupported platform: %s", platform)
 	}
 }
 
 // Build URL dynamically
-func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float64, country, lang string, limit, radius, categorySet int, token string) string {
+func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float64, country, lang string, limit, radius, categorySet int, token string, sessionToken string) string {
 	encodedQuery := url.QueryEscape(query)
 
 	switch platform {
@@ -150,9 +155,89 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 		}
 		return fmt.Sprintf("https://api.tomtom.com/search/2/reverseGeocode/%f,%f.json%s",
 			lat, lng, queryStrings)
+
+	case "google":
+		// Detect if query is one of the 3 special categories
+		lowerQuery := strings.ToLower(query)
+		var placeType string
+
+		switch {
+		case lowerQuery == "airport":
+			placeType = "airport"
+		case lowerQuery == "mall":
+			placeType = "shopping_mall"
+		case lowerQuery == "tourist attraction":
+			placeType = "tourist_attraction"
+		}
+
+		if placeType != "" {
+			// Use Google Text Search with type filter
+			base := "https://maps.googleapis.com/maps/api/place/textsearch/json"
+			params := url.Values{}
+			params.Set("query", query)
+			params.Set("type", placeType)
+			params.Set("key", token)
+			params.Set("sessiontoken", sessionToken)
+			params.Set("language", lang)
+			if lat != 0 && lng != 0 {
+				params.Set("location", fmt.Sprintf("%.6f,%.6f", lat, lng))
+			}
+			if radius != 0 {
+				params.Set("radius", strconv.Itoa(radius))
+			}
+			return fmt.Sprintf("%s?%s", base, params.Encode())
+		}
+
+		// Default: use Autocomplete
+		base := "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+		params := url.Values{}
+		params.Set("input", query)
+		params.Set("key", token)
+		params.Set("sessiontoken", sessionToken)
+		params.Set("language", lang)
+		if country != "" {
+			params.Set("components", "country:"+country)
+		}
+		return fmt.Sprintf("%s?%s", base, params.Encode())
+
+		// Google-specific: session token (optional: manage externally)
+		//sessionToken := uuid.New().String()
+		//params.Set("sessiontoken", sessionToken)
 	default:
 		return ""
 	}
+}
+
+// Fetch and parse Google Place Details by Place ID only
+func (s *GecodeService) FetchGooglePlaceDetails(placeID string, lang string, sessionToken string) ([]models.GeocodingResult, error) {
+	_, token, err := s.choosePlatformAndToken(1)
+	if err != nil {
+		return nil, err
+	}
+
+	if placeID == "" {
+		return nil, fmt.Errorf("place_id is required")
+	}
+
+	base := "https://maps.googleapis.com/maps/api/place/details/json"
+	params := url.Values{}
+	params.Set("place_id", placeID)
+	params.Set("key", token)
+	params.Set("sessiontoken", sessionToken)
+	params.Set("fields", "geometry")
+	if lang != "" {
+		params.Set("language", lang)
+	}
+
+	url := fmt.Sprintf("%s?%s", base, params.Encode())
+	log.Printf("Fetching place details from: %s", url)
+
+	body, err := s.FetchGeocodingData(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return models.ParseGooglePlaceDetailsResponse(body)
 }
 
 // Fetch data from the API

@@ -115,6 +115,16 @@ func (c *Cache) GenerateGecodeCacheKey(query string, lat, lng float64, country, 
 	return cachedKey
 }
 
+func (c *Cache) GeneratePlaceIDCacheKey(placeID string, lang string) string {
+	rawKey := ""
+	rawKey = fmt.Sprintf("placeID:%s:%s", placeID, lang)
+	// Optional: Use hashing for consistent length and encoding safety
+	hasher := sha256.New()
+	hasher.Write([]byte(rawKey))
+	cachedKey := hex.EncodeToString(hasher.Sum(nil))
+	return cachedKey
+}
+
 // generateCacheKey generates a unique cache key for the request
 func (c *Cache) GenerateRouteCacheKey(coordinates string) string {
 	rawKey := ""
@@ -134,7 +144,7 @@ func (c *Cache) CacheGecodeResponse(cachedKey string, results []models.Geocoding
 		return
 	}
 
-	err = c.RedisClient.Set(c.CTX, cachedKey, data, 3*time.Hour).Err()
+	err = c.RedisClient.Set(c.CTX, cachedKey, data, 12*time.Hour).Err()
 	if err != nil {
 		log.Printf("Failed to cache geocoding result in Redis: %v", err)
 	}

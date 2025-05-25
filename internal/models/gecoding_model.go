@@ -33,6 +33,7 @@ type GeocodingResult struct {
 	BoundingBoxBottomRightLat float64 `json:"bbox_bottom_right_lat,omitempty" db:"bbox_bottom_right_lat"`
 	BoundingBoxBottomRightLon float64 `json:"bbox_bottom_right_lon,omitempty" db:"bbox_bottom_right_lon"`
 	CachedKey                 string  `json:"cached_key" db:"cached_key"`
+	PlaceID                   string  `json:"place_id" db:"place_id"`
 }
 
 // Parse Mapbox response
@@ -178,4 +179,117 @@ func ParseTomTomResponse(body []byte) ([]GeocodingResult, error) {
 		})
 	}
 	return results, nil
+}
+
+// ParseGoogleAutocompleteResponse parses either Google Autocomplete or Text Search response
+func ParseGoogleAutocompleteResponse(body []byte) ([]GeocodingResult, error) {
+	var autoResp struct {
+		Predictions []struct {
+			Description          string `json:"description"`
+			PlaceID              string `json:"place_id"`
+			StructuredFormatting struct {
+				MainText      string `json:"main_text"`
+				SecondaryText string `json:"secondary_text"`
+			} `json:"structured_formatting"`
+			Terms []struct {
+				Value string `json:"value"`
+			} `json:"terms"`
+		} `json:"predictions"`
+	}
+
+	var textResp struct {
+		Results []struct {
+			Name             string `json:"name"`
+			FormattedAddress string `json:"formatted_address"`
+			PlaceID          string `json:"place_id"`
+			Geometry         struct {
+				Location struct {
+					Lat float64 `json:"lat"`
+					Lng float64 `json:"lng"`
+				} `json:"location"`
+			} `json:"geometry"`
+		} `json:"results"`
+	}
+
+	var results []GeocodingResult
+	var autoErr, textErr error
+
+	// Try unmarshaling autocomplete
+	autoErr = json.Unmarshal(body, &autoResp)
+	if autoErr == nil && len(autoResp.Predictions) > 0 {
+		for _, item := range autoResp.Predictions {
+			country := ""
+			if len(item.Terms) > 0 {
+				country = item.Terms[len(item.Terms)-1].Value
+			}
+			results = append(results, GeocodingResult{
+				Platform:    "google",
+				Name:        item.StructuredFormatting.MainText,
+				Address:     item.Description,
+				Country:     country,
+				CountryCode: "",
+				Latitude:    0, // No lat/lng in autocomplete
+				Longitude:   0,
+				PlaceID:     item.PlaceID,
+			})
+		}
+		return results, nil
+	}
+
+	// Try unmarshaling text search
+	textErr = json.Unmarshal(body, &textResp)
+	if textErr == nil && len(textResp.Results) > 0 {
+		for _, item := range textResp.Results {
+			//country := ""
+			//parts := strings.Split(item.FormattedAddress, ",")
+			//if len(parts) > 0 {
+			//	country = strings.TrimSpace(parts[len(parts)-1])
+			//}
+			results = append(results, GeocodingResult{
+				Platform:    "google",
+				Name:        item.Name,
+				Address:     item.FormattedAddress,
+				Latitude:    item.Geometry.Location.Lat,
+				Longitude:   item.Geometry.Location.Lng,
+				Country:     "",
+				CountryCode: "",
+				PlaceID:     item.PlaceID,
+			})
+		}
+		return results, nil
+	}
+
+	// Both failed
+	return nil, fmt.Errorf("failed to parse response: autoErr=%v, textErr=%v", autoErr, textErr)
+}
+
+// ParseGooglePlaceDetailsResponse parses either Google Autocomplete or Text Search response
+func ParseGooglePlaceDetailsResponse(body []byte) ([]GeocodingResult, error) {
+
+	var response struct {
+		Result struct {
+			Geometry struct {
+				Location struct {
+					Lat float64 `json:"lat"`
+					Lng float64 `json:"lng"`
+				} `json:"location"`
+			} `json:"geometry"`
+		} `json:"result"`
+	}
+
+	var results []GeocodingResult
+	var autoErr, textErr error
+
+	textErr = json.Unmarshal(body, &response)
+	if response.Result.Geometry.Location.Lng != 0 || response.Result.Geometry.Location.Lat != 0 {
+		results = append(results, GeocodingResult{
+			Platform:  "google",
+			Latitude:  response.Result.Geometry.Location.Lat,
+			Longitude: response.Result.Geometry.Location.Lng,
+		})
+		return results, nil
+	}
+
+	// Both failed
+	return nil, fmt.Errorf("failed to parse response: autoErr=%v, textErr=%v", autoErr, textErr)
 }

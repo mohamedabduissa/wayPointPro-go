@@ -26,6 +26,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	country := c.Query("country")
 	lang := c.Query("lang")
 	limitStr := c.Query("limit")
+	sessionToken := c.Query("session_token")
 	var radius int = 0
 	var categorySet int = 0
 	// Default limit to 10 if not provided
@@ -153,7 +154,7 @@ func GetGeCodingHandler(c *gin.Context) {
 		log.Printf("Error fetching gecoder from cache DB")
 	}
 
-	geocoding, err := gecoderService.FetchAndParseGeocoding(query, lat, lng, country, lang, limit, radius, categorySet)
+	geocoding, err := gecoderService.FetchAndParseGeocoding(query, lat, lng, country, lang, limit, radius, categorySet, sessionToken)
 	if err != nil {
 		return
 	}
