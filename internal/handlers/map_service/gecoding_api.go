@@ -92,26 +92,26 @@ func GetGeCodingHandler(c *gin.Context) {
 		gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX)
 
 		cachedKeys := []string{
-			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "SA", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "KW", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "EG", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "KW", "ar", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "SA", "ar", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("airport", lat, lng, "EG", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "EG", "ar", 10),
 
-			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "SA", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "KW", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "EG", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "KW", "ar", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "SA", "ar", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("mall", lat, lng, "EG", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "ar", 10),
 
-			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "SA", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "KW", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "EG", "en", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "KW", "ar", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "SA", "ar", 10),
-			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction", lat, lng, "EG", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "ar", 10),
 		}
 
 		// Build placeholder string: $1, $2, ..., $n
