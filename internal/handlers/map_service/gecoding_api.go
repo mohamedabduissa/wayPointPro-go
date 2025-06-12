@@ -72,6 +72,8 @@ func GetGeCodingHandler(c *gin.Context) {
 
 	// Generate a unique cached_key
 	var keyQuery string
+	var lowerQuery string
+	lowerQuery = strings.ToLower(query)
 	if categorySet != 0 {
 		keyQuery = strconv.Itoa(categorySet)
 		if lat != 0 && lng != 0 {
@@ -83,7 +85,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	}
 
 	if sessionToken != "" {
-		keyQuery = query
+		keyQuery = lowerQuery
 		keyQuery += "_google"
 	}
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(keyQuery, lat, lng, country, lang, limit)
