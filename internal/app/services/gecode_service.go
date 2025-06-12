@@ -178,7 +178,7 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 			// Use Google Text Search with type filter
 			base := "https://maps.googleapis.com/maps/api/place/textsearch/json"
 			params := url.Values{}
-			params.Set("query", query)
+			//params.Set("query", query)
 			params.Set("type", placeType)
 			params.Set("key", token)
 			params.Set("sessiontoken", sessionToken)
