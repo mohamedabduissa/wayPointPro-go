@@ -116,6 +116,7 @@ func GetGeCodingHandler(c *gin.Context) {
 			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "ar", 10),
 			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "ar", 10),
 			"e7e2516cea6859b5c9d63a366feb943e5354bf10f85e5b341a4025ae22bb0f02",
+			"61eeaa6489859ae3463ab431e77a3499b56203b247752d2a600cc7cebb54d5b7",
 		}
 
 		// Build placeholder string: $1, $2, ..., $n
