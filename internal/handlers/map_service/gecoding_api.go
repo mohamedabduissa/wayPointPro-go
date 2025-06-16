@@ -94,7 +94,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	case lowerQuery == "tourist attraction":
 		placeType = "tourist_attraction"
 	}
-	if placeType != "" {
+	if placeType == "" {
 		lat = 0
 		lng = 0
 	}
