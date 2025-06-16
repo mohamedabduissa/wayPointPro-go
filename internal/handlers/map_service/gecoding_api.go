@@ -74,16 +74,30 @@ func GetGeCodingHandler(c *gin.Context) {
 	var keyQuery string
 	var lowerQuery string
 	lowerQuery = strings.ToLower(query)
-	if categorySet != 0 {
-		keyQuery = strconv.Itoa(categorySet)
-		if lat != 0 && lng != 0 {
-			// Append lat & lng to differentiate cache keys for same category but different locations
-			keyQuery += fmt.Sprintf("_%.4f_%.4f", lat, lng)
-		}
-	} else {
-		keyQuery = query
-	}
+	//if categorySet != 0 {
+	//	keyQuery = strconv.Itoa(categorySet)
+	//	if lat != 0 && lng != 0 {
+	//		// Append lat & lng to differentiate cache keys for same category but different locations
+	//		keyQuery += fmt.Sprintf("_%.4f_%.4f", lat, lng)
+	//	}
+	//} else {
+	//	keyQuery = query
+	//}
 
+	// Detect if query is one of the 3 special categories
+	var placeType string
+	switch {
+	case lowerQuery == "airport":
+		placeType = "airport"
+	case lowerQuery == "mall":
+		placeType = "shopping_mall"
+	case lowerQuery == "tourist attraction":
+		placeType = "tourist_attraction"
+	}
+	if placeType != "" {
+		lat = 0
+		lng = 0
+	}
 	if sessionToken != "" {
 		keyQuery = lowerQuery
 		keyQuery += "_google"
@@ -115,8 +129,6 @@ func GetGeCodingHandler(c *gin.Context) {
 			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "ar", 10),
 			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "ar", 10),
 			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "ar", 10),
-			"e7e2516cea6859b5c9d63a366feb943e5354bf10f85e5b341a4025ae22bb0f02",
-			"61eeaa6489859ae3463ab431e77a3499b56203b247752d2a600cc7cebb54d5b7",
 		}
 
 		// Build placeholder string: $1, $2, ..., $n
@@ -128,10 +140,12 @@ func GetGeCodingHandler(c *gin.Context) {
 			args[i] = key
 		}
 
-		query := fmt.Sprintf(
-			`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
-			strings.Join(placeholders, ", "),
-		)
+		query := "DELETE FROM geocoding_results;"
+
+		//query := fmt.Sprintf(
+		//	`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
+		//	strings.Join(placeholders, ", "),
+		//)
 
 		_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
 
@@ -196,6 +210,13 @@ func response(results []models.GeocodingResult, c *gin.Context) {
 		delete(resultMap, "bbox_bottom_right_lon")
 		delete(resultMap, "bbox_top_left_lat")
 		delete(resultMap, "bbox_top_left_lon")
+
+		// Check if "place_id" key exists and its value is null
+		//if val, ok := resultMap["place_id"]; ok {
+		//	if val == nil { // If place_id is null, skip adding this result to modifiedResults
+		//		continue // Skip to the next iteration of the loop
+		//	}
+		//}
 
 		// Add the modified result to the new slice
 		modifiedResults[i] = resultMap
