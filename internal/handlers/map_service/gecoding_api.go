@@ -132,14 +132,14 @@ func GetGeCodingHandler(c *gin.Context) {
 		}
 
 		// Build placeholder string: $1, $2, ..., $n
-		//placeholders := make([]string, len(cachedKeys))
-		//args := make([]interface{}, len(cachedKeys))
-		//
-		//for i, key := range cachedKeys {
-		//	placeholders[i] = fmt.Sprintf("$%d", i+1)
-		//	args[i] = key
-		//}
-		//
+		placeholders := make([]string, len(cachedKeys))
+		args := make([]interface{}, len(cachedKeys))
+
+		for i, key := range cachedKeys {
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+			args[i] = key
+		}
+
 		//query := "DELETE FROM geocoding_results;"
 		//
 		////query := fmt.Sprintf(
