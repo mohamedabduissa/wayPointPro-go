@@ -206,7 +206,7 @@ func (c *Cache) GetGecodeData(cachedKey string) ([]models.GeocodingResult, error
 			&result.Platform, &result.Name, &result.Address, &result.Latitude, &result.Longitude,
 			&result.Country, &result.CountryCode,
 			&result.BoundingBoxTopLeftLat, &result.BoundingBoxTopLeftLon,
-			&result.BoundingBoxBottomRightLat, &result.BoundingBoxBottomRightLon,
+			&result.BoundingBoxBottomRightLat, &result.BoundingBoxBottomRightLon, &result.PlaceID,
 		)
 		if err != nil {
 			log.Printf("❌ Error scanning row: %v", err)
