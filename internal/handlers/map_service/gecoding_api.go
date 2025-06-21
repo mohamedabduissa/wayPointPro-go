@@ -106,7 +106,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	log.Printf("cachedKey: %s", cachedKey)
 
 	if c.Query("reset") != "" {
-		gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX)
+		//gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX)
 
 		cachedKeys := []string{
 			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "en", 10),
@@ -140,14 +140,24 @@ func GetGeCodingHandler(c *gin.Context) {
 			args[i] = key
 		}
 
-		query := "DELETE FROM geocoding_results;"
+		query := "ALTER TABLE geocoding_results ADD COLUMN place_id TEXT NULL;"
 
 		//query := fmt.Sprintf(
 		//	`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
 		//	strings.Join(placeholders, ", "),
 		//)
 
-		_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+		_, err = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+		log.Printf("Error executing query: %v", err)
+
+		//query := "DELETE FROM geocoding_results;"
+		//
+		////query := fmt.Sprintf(
+		////	`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
+		////	strings.Join(placeholders, ", "),
+		////)
+		//
+		//_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
 
 	}
 

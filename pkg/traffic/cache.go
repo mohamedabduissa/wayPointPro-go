@@ -162,11 +162,11 @@ func (c *Cache) SaveGecodeData(cachedKey string, results []models.GeocodingResul
 	for _, result := range results {
 		_, err := c.DB.Exec(c.CTX, `
 			INSERT INTO geocoding_results 
-			(platform, name, address, latitude, longitude, country, country_code, bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon, cached_key)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			(platform, name, address, latitude, longitude, country, country_code, bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon, cached_key, place_id)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		`, result.Platform, result.Name, result.Address, result.Latitude, result.Longitude,
 			result.Country, result.CountryCode, result.BoundingBoxTopLeftLat, result.BoundingBoxTopLeftLon,
-			result.BoundingBoxBottomRightLat, result.BoundingBoxBottomRightLon, cachedKey)
+			result.BoundingBoxBottomRightLat, result.BoundingBoxBottomRightLon, cachedKey, result.PlaceID)
 		if err != nil {
 			log.Printf("Failed to store geocoding result in database: %v", err)
 		}
