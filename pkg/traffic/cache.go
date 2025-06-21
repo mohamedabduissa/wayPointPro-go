@@ -160,7 +160,6 @@ func (c *Cache) CacheRouteResponse(cachedKey string, results models.TransformedR
 // storeInDatabase stores the geocoding results in the database
 func (c *Cache) SaveGecodeData(cachedKey string, results []models.GeocodingResult) {
 	for _, result := range results {
-		log.Printf("the placeID is %s", result.PlaceID)
 		_, err := c.DB.Exec(c.CTX, `
 			INSERT INTO geocoding_results 
 			(platform, name, address, latitude, longitude, country, country_code, bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon, cached_key, place_id)
@@ -187,7 +186,7 @@ func (c *Cache) GetGecodeData(cachedKey string) ([]models.GeocodingResult, error
 	// Query the database
 	rows, err := c.DB.Query(c.CTX, `
 		SELECT platform, name, address, latitude, longitude, country, country_code, 
-		       bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon
+		       bbox_top_left_lat, bbox_top_left_lon, bbox_bottom_right_lat, bbox_bottom_right_lon,  place_id
 		FROM geocoding_results
 		WHERE cached_key = $1
 	`, cachedKey)
