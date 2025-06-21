@@ -140,14 +140,14 @@ func GetGeCodingHandler(c *gin.Context) {
 			args[i] = key
 		}
 
-		//query := "DELETE FROM geocoding_results;"
-		//
-		////query := fmt.Sprintf(
-		////	`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
-		////	strings.Join(placeholders, ", "),
-		////)
-		//
-		//_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+		query := "DELETE FROM geocoding_results;"
+
+		//query := fmt.Sprintf(
+		//	`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
+		//	strings.Join(placeholders, ", "),
+		//)
+
+		_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
 
 	}
 
