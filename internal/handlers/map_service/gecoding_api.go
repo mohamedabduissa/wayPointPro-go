@@ -123,12 +123,12 @@ func GetGeCodingHandler(c *gin.Context) {
 			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "ar", 10),
 			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "ar", 10),
 			//
-			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "ar", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "ar", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "ar", 10),
 		}
 
 		// Build placeholder string: $1, $2, ..., $n
@@ -142,12 +142,12 @@ func GetGeCodingHandler(c *gin.Context) {
 
 		//query := "DELETE FROM geocoding_results;"
 		//
-		////query := fmt.Sprintf(
-		////	`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
-		////	strings.Join(placeholders, ", "),
-		////)
-		//
-		//_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
+		query := fmt.Sprintf(
+			`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
+			strings.Join(placeholders, ", "),
+		)
+		
+		_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
 
 	}
 
