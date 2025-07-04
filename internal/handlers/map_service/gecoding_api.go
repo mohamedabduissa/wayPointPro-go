@@ -108,6 +108,7 @@ func GetGeCodingHandler(c *gin.Context) {
 	if c.Query("reset") != "" {
 		gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX)
 		log.Printf("flashed: %s", "redis")
+		log.Printf("lat & lng: %s%s", lat, lng)
 
 		cachedKeys := []string{
 			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "en", 10),
