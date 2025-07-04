@@ -107,22 +107,23 @@ func GetGeCodingHandler(c *gin.Context) {
 
 	if c.Query("reset") != "" {
 		gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX)
+		log.Printf("flashed: %s", "redis")
 
 		cachedKeys := []string{
-			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "KW", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "EG", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "KW", "ar", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "ar", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "EG", "ar", 10),
-			//
-			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "KW", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "en", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "KW", "ar", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "ar", 10),
-			//gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "ar", 10),
-			//
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("airport_google", lat, lng, "EG", "ar", 10),
+
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "KW", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "en", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "KW", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "SA", "ar", 10),
+			gecoderService.Cache.GenerateGecodeCacheKey("mall_google", lat, lng, "EG", "ar", 10),
+
 			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "SA", "en", 10),
 			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "KW", "en", 10),
 			gecoderService.Cache.GenerateGecodeCacheKey("tourist attraction_google", lat, lng, "EG", "en", 10),
@@ -146,7 +147,7 @@ func GetGeCodingHandler(c *gin.Context) {
 			`DELETE FROM geocoding_results WHERE cached_key IN (%s);`,
 			strings.Join(placeholders, ", "),
 		)
-		
+
 		_, _ = gecoderService.Cache.DB.Exec(gecoderService.Cache.CTX, query, args...)
 
 	}
