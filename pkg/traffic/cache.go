@@ -103,7 +103,9 @@ func (c *Cache) GetFromRedis(cachedKey string) ([]byte, error) {
 // generateCacheKey generates a unique cache key for the request
 func (c *Cache) GenerateGecodeCacheKey(query string, lat, lng float64, country, lang string, limit int) string {
 	rawKey := ""
-	if query != "" {
+	if query != "" && lat != 0 && lng != 0 {
+		rawKey = fmt.Sprintf("geocode:latlng:%f:%f:%s:%s:%d", lat, lng, country, lang, limit)
+	} else if query != "" {
 		rawKey = fmt.Sprintf("geocode:%s:%s:%s:%d", query, country, lang, limit)
 	} else {
 		rawKey = fmt.Sprintf("geocode:latlng:%f:%f:%s:%s:%d", lat, lng, country, lang, limit)
