@@ -154,5 +154,7 @@ func (s *ValhallaService) GetRoute(locations []Location, options map[string]stri
 		return nil, err
 	}
 
+	log.Printf("Response from Valhalla: %v", string(jsonData))
+
 	return &routeResponse, nil
 }
