@@ -125,6 +125,7 @@ func (s *ValhallaService) GetRoute(locations []Location, options map[string]stri
 	//	requestData.CostingOptions.Auto.UseFerry = options["use_ferry"]
 	//}
 
+	log.Printf("request is %v", requestData)
 	// Convert request to JSON
 	jsonData, err := json.MarshalIndent(requestData, "", "  ") // Pretty print JSON
 	if err != nil {
