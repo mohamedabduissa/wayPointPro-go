@@ -5,11 +5,12 @@ import (
 	"WayPointPro/internal/models"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetGeCodingHandler handles requests for route information
@@ -49,11 +50,17 @@ func GetGeCodingHandler(c *gin.Context) {
 		}
 	}
 
+	// Log request parameters
+	log.Printf("[GEOCODE] Request received - query: %q, latStr: %q, lngStr: %q, country: %q, lang: %q, limit: %d, radius: %d, categorySet: %d, sessionToken: %q",
+		query, latStr, lngStr, country, lang, limit, radius, categorySet, sessionToken)
+
 	// Validate inputs
 	if query == "" && (latStr == "" || lngStr == "") {
+		log.Printf("[GEOCODE] ERROR - Validation failed: missing query or lat/lng")
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request: Provide either 'query' or 'lat' and 'lng'"})
 		return
 	}
+	log.Printf("[GEOCODE] Validation passed - proceeding with geocoding request")
 	// Parse lat/lng if provided
 	var lat, lng float64
 	var err error
@@ -103,7 +110,7 @@ func GetGeCodingHandler(c *gin.Context) {
 		keyQuery += "_google"
 	}
 	cachedKey := gecoderService.Cache.GenerateGecodeCacheKey(keyQuery, lat, lng, country, lang, limit)
-	log.Printf("cachedKey: %s", cachedKey)
+	log.Printf("[GEOCODE] Generated cache key: %s for query: %q, lat: %f, lng: %f, country: %q, lang: %q", cachedKey, query, lat, lng, country, lang)
 
 	if c.Query("reset") != "" {
 		gecoderService.Cache.RedisClient.FlushDB(gecoderService.Cache.CTX)
@@ -156,41 +163,50 @@ func GetGeCodingHandler(c *gin.Context) {
 	// Check Redis cache
 	cachedData, err := gecoderService.Cache.GetFromRedis(cachedKey)
 	if err == nil {
-		log.Printf("Retreived from cache redis")
+		log.Printf("[GEOCODE] Cache HIT (Redis) - key: %s", cachedKey)
 		var cachedGeocoder []models.GeocodingResult
 		err := json.Unmarshal(cachedData, &cachedGeocoder)
 		if err != nil {
+			log.Printf("[GEOCODE] ERROR - Failed to unmarshal Redis cache data: %v", err)
 			return
 		}
+		log.Printf("[GEOCODE] Returning %d results from Redis cache", len(cachedGeocoder))
 		response(cachedGeocoder, c)
 		return
 	}
+	log.Printf("[GEOCODE] Cache MISS (Redis) - key: %s, error: %v", cachedKey, err)
 
 	//Check the database for the cached_key
 	cachedGeocoder, err := gecoderService.Cache.GetGecodeData(cachedKey)
 	if err == nil && len(cachedGeocoder) > 0 {
 		// Cache the database results in Redis
 		gecoderService.Cache.CacheGecodeResponse(cachedKey, cachedGeocoder)
-		log.Printf("Retreived from cache db")
+		log.Printf("[GEOCODE] Cache HIT (DB) - key: %s, results: %d", cachedKey, len(cachedGeocoder))
 		response(cachedGeocoder, c)
 		return
 	}
 	if err != nil {
-		log.Printf("Error fetching gecoder from cache DB")
+		log.Printf("[GEOCODE] Cache MISS (DB) - key: %s, error: %v", cachedKey, err)
 	}
 
+	log.Printf("[GEOCODE] Cache MISS - proceeding to fetch from external API")
 	geocoding, err := gecoderService.FetchAndParseGeocoding(query, lat, lng, country, lang, limit, radius, categorySet, sessionToken)
 	if err != nil {
+		log.Printf("[GEOCODE] ERROR - Failed to fetch geocoding data: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	// Cache and store the results
 	if geocoding == nil {
+		log.Printf("[GEOCODE] WARNING - No results returned from external API")
 		geocoding = []models.GeocodingResult{}
 	} else {
+		log.Printf("[GEOCODE] Caching %d results - key: %s", len(geocoding), cachedKey)
 		gecoderService.Cache.CacheGecodeResponse(cachedKey, geocoding)
 		gecoderService.Cache.SaveGecodeData(cachedKey, geocoding)
 	}
 
+	log.Printf("[GEOCODE] Returning %d results to client", len(geocoding))
 	response(geocoding, c)
 }
 

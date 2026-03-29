@@ -31,6 +31,8 @@ func NewGecodeService() *GecodeService {
 
 // Choose platform and access token dynamically
 func (s *GecodeService) choosePlatformAndToken(requiredRequests int, requiredPlatform string) (string, string, error) {
+	log.Printf("[GEOCODE] Choosing platform/token - requiredRequests: %d, requiredPlatform: %q", requiredRequests, requiredPlatform)
+
 	query := `
 		SELECT platform, access_token, request_limit, request_count
 		FROM access_tokens
@@ -46,8 +48,16 @@ func (s *GecodeService) choosePlatformAndToken(requiredRequests int, requiredPla
 	var requestLimit, requestCount int
 
 	if err := row.Scan(&platform, &accessToken, &requestLimit, &requestCount); err != nil {
+		log.Printf("[GEOCODE] ERROR - Failed to select platform/token: %v", err)
 		return "", "", fmt.Errorf("no available access tokens or failed to fetch: %v", err)
 	}
+
+	// Log token with last 4 chars only for security
+	tokenPreview := "***"
+	if len(accessToken) >= 4 {
+		tokenPreview = accessToken[len(accessToken)-4:]
+	}
+	log.Printf("[GEOCODE] Selected platform: %q, token: ***%s, requestLimit: %d, requestCount: %d", platform, tokenPreview, requestLimit, requestCount)
 
 	return platform, accessToken, nil
 }
@@ -75,40 +85,71 @@ func (s *GecodeService) logRequestToDB(platform, accessToken string, zoom, x, y 
 
 // Main logic for fetching and parsing geocoding data
 func (s *GecodeService) FetchAndParseGeocoding(query string, lat, lng float64, country, lang string, limit int, radius int, categorySet int, sessionToken string) ([]models.GeocodingResult, error) {
+	log.Printf("[GEOCODE] FetchAndParseGeocoding - query: %q, lat: %f, lng: %f, country: %q, lang: %q, limit: %d, radius: %d, categorySet: %d, sessionToken: %q",
+		query, lat, lng, country, lang, limit, radius, categorySet, sessionToken)
+
 	requiredPlatform := "tomtom"
 	if sessionToken != "" {
 		requiredPlatform = "google"
 	}
+	log.Printf("[GEOCODE] Determined required platform: %q (sessionToken provided: %v)", requiredPlatform, sessionToken != "")
+
 	platform, token, err := s.choosePlatformAndToken(1, requiredPlatform)
 	if err != nil {
+		log.Printf("[GEOCODE] ERROR - Platform/token selection failed: %v", err)
 		return nil, err
 	}
 
 	url := s.BuildGeocodingURL(platform, query, lat, lng, country, lang, limit, radius, categorySet, token, sessionToken)
+	log.Printf("[GEOCODE] Built URL for platform %q: %s", platform, url)
 
 	s.updateAccessTokenRequestCount(token, 1)
-	log.Printf("Fetching geocoding url: %s", url)
+	log.Printf("[GEOCODE] Updated request count for token")
+
 	body, err := s.FetchGeocodingData(url)
 	if err != nil {
+		log.Printf("[GEOCODE] ERROR - Failed to fetch geocoding data: %v", err)
 		return nil, err
 	}
 
+	log.Printf("[GEOCODE] Parsing response for platform: %q, body length: %d bytes", platform, len(body))
+
+	var results []models.GeocodingResult
 	switch platform {
 	case "mapbox":
-		return models.ParseMapboxResponse(body)
+		results, err = models.ParseMapboxResponse(body)
 	case "tomtom":
-		return models.ParseTomTomResponse(body)
+		results, err = models.ParseTomTomResponse(body)
 	case "google":
-		return models.ParseGoogleAutocompleteResponse(body)
-
+		results, err = models.ParseGoogleAutocompleteResponse(body)
 	default:
+		log.Printf("[GEOCODE] ERROR - Unsupported platform: %s", platform)
 		return nil, fmt.Errorf("unsupported platform: %s", platform)
 	}
+
+	if err != nil {
+		log.Printf("[GEOCODE] ERROR - Failed to parse %s response: %v", platform, err)
+		// Log response body preview for debugging
+		previewLen := 500
+		if len(body) < previewLen {
+			previewLen = len(body)
+		}
+		log.Printf("[GEOCODE] Response body preview: %s", string(body[:previewLen]))
+		return nil, err
+	}
+
+	log.Printf("[GEOCODE] Successfully parsed %d results from %s platform", len(results), platform)
+	return results, nil
 }
 
 // Build URL dynamically
 func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float64, country, lang string, limit, radius, categorySet int, token string, sessionToken string) string {
+	log.Printf("[GEOCODE] BuildGeocodingURL - platform: %q, query: %q, lat: %f, lng: %f, country: %q, lang: %q, limit: %d, radius: %d, categorySet: %d",
+		platform, query, lat, lng, country, lang, limit, radius, categorySet)
+
 	encodedQuery := url.QueryEscape(query)
+
+	var builtURL string
 
 	switch platform {
 	case "mapbox":
@@ -124,11 +165,11 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 
 		if query != "" {
 			queryStrings += "&q=" + encodedQuery
-			return fmt.Sprintf("https://api.mapbox.com/search/geocode/v6/forward%s",
-				queryStrings)
+			builtURL = fmt.Sprintf("https://api.mapbox.com/search/geocode/v6/forward%s", queryStrings)
+		} else {
+			builtURL = fmt.Sprintf("https://api.mapbox.com/search/geocode/v6/reverse%s&longitude=%f&latitude=%f", queryStrings, lng, lat)
 		}
-		return fmt.Sprintf("https://api.mapbox.com/search/geocode/v6/reverse%s&longitude=%f&latitude=%f",
-			queryStrings, lng, lat)
+
 	case "tomtom":
 		queryStrings := ""
 		queryStrings = "?key=" + token
@@ -154,11 +195,10 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 			queryStrings += "&lon=" + fmt.Sprintf("%.6f", lng)
 		}
 		if query != "" {
-			return fmt.Sprintf("https://api.tomtom.com/search/2/search/%s.json%s",
-				encodedQuery, queryStrings)
+			builtURL = fmt.Sprintf("https://api.tomtom.com/search/2/search/%s.json%s", encodedQuery, queryStrings)
+		} else {
+			builtURL = fmt.Sprintf("https://api.tomtom.com/search/2/reverseGeocode/%f,%f.json%s", lat, lng, queryStrings)
 		}
-		return fmt.Sprintf("https://api.tomtom.com/search/2/reverseGeocode/%f,%f.json%s",
-			lat, lng, queryStrings)
 
 	case "google":
 		// Detect if query is one of the 3 special categories
@@ -189,27 +229,33 @@ func (s *GecodeService) BuildGeocodingURL(platform, query string, lat, lng float
 			if radius != 0 {
 				params.Set("radius", strconv.Itoa(radius))
 			}
-			return fmt.Sprintf("%s?%s", base, params.Encode())
+			builtURL = fmt.Sprintf("%s?%s", base, params.Encode())
+			log.Printf("[GEOCODE] Google Text Search URL (placeType: %q): %s", placeType, builtURL)
+		} else {
+			// Default: use Autocomplete
+			base := "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+			params := url.Values{}
+			params.Set("input", query)
+			params.Set("key", token)
+			params.Set("sessiontoken", sessionToken)
+			params.Set("language", lang)
+			if country != "" {
+				params.Set("components", "country:"+country)
+			}
+			builtURL = fmt.Sprintf("%s?%s", base, params.Encode())
+			log.Printf("[GEOCODE] Google Autocomplete URL: %s", builtURL)
 		}
-
-		// Default: use Autocomplete
-		base := "https://maps.googleapis.com/maps/api/place/autocomplete/json"
-		params := url.Values{}
-		params.Set("input", query)
-		params.Set("key", token)
-		params.Set("sessiontoken", sessionToken)
-		params.Set("language", lang)
-		if country != "" {
-			params.Set("components", "country:"+country)
-		}
-		return fmt.Sprintf("%s?%s", base, params.Encode())
 
 		// Google-specific: session token (optional: manage externally)
 		//sessionToken := uuid.New().String()
 		//params.Set("sessiontoken", sessionToken)
 	default:
+		log.Printf("[GEOCODE] ERROR - Unknown platform: %q", platform)
 		return ""
 	}
+
+	log.Printf("[GEOCODE] Final built URL for %q: %s", platform, builtURL)
+	return builtURL
 }
 
 // Fetch and parse Google Place Details by Place ID only
@@ -246,19 +292,34 @@ func (s *GecodeService) FetchGooglePlaceDetails(placeID string, lang string, ses
 
 // Fetch data from the API
 func (s *GecodeService) FetchGeocodingData(url string) ([]byte, error) {
+	log.Printf("[GEOCODE] Fetching data from URL: %s", url)
+
 	resp, err := http.Get(url)
 	if err != nil {
+		log.Printf("[GEOCODE] ERROR - HTTP request failed: %v", err)
 		return nil, fmt.Errorf("failed to fetch geocoding data: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("non-200 response: %d", resp.StatusCode)
-	}
+	log.Printf("[GEOCODE] API Response - Status: %d (%s)", resp.StatusCode, resp.Status)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[GEOCODE] ERROR - Failed to read response body: %v", err)
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
+
+	log.Printf("[GEOCODE] Response body length: %d bytes", len(body))
+
+	if resp.StatusCode != http.StatusOK {
+		// Log response body preview for non-200 responses
+		previewLen := 500
+		if len(body) < previewLen {
+			previewLen = len(body)
+		}
+		log.Printf("[GEOCODE] ERROR - Non-200 response body preview: %s", string(body[:previewLen]))
+		return nil, fmt.Errorf("non-200 response: %d", resp.StatusCode)
+	}
+
 	return body, nil
 }
